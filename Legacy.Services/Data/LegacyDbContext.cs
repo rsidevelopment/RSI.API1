@@ -18,10 +18,12 @@ namespace Legacy.Services.Data
         public DbSet<TranslatorModel> Translators { get; set; }
         public DbSet<ReferralModel> Referrals { get; set; }
         public DbSet<UpgradeAuditModel> UpgradeAudits { get; set; }
+        public DbSet<InventoryModel> Inventories { get; set; }
+        public DbSet<UnitModel> Units { get; set; }
+        public DbSet<ReservationModel> Reservations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-
             base.OnModelCreating(modelBuilder);
         }
     }

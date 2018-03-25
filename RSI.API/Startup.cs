@@ -39,6 +39,9 @@ namespace RSI.API
             services.AddTransient<IOrganizationService, OrganizationService>();
             services.AddTransient<IPackageService, PackageService>();
             services.AddTransient<ICountriesStatesService, CountriesStatesService>();
+            services.AddTransient<IUnitService, UnitService>();
+            services.AddTransient<IInventoryService, InventoryService>();
+            services.AddTransient<IReservationService, ReservationService>();
 
             services.AddMvcCore()
                 .AddAuthorization()
@@ -49,9 +52,9 @@ namespace RSI.API
                 .AddIdentityServerAuthentication(options =>
                 {
                     options.LegacyAudienceValidation = true;
-                    options.Authority = "https://authorize.accessrsi.com";
-                    //options.Authority = "http://localhost:58580";
-                    //options.RequireHttpsMetadata = false;
+                    //options.Authority = "https://authorize.accessrsi.com";
+                    //options.Authority = "http://localhost:60195";
+                    options.RequireHttpsMetadata = false;
                     options.ApiName = "api1";
 
 
@@ -59,7 +62,7 @@ namespace RSI.API
 
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info { Title = "Contacts API", Version = "v1" });
+                c.SwaggerDoc("v1", new Info { Title = "Condo Engine API", Version = "v1" });
             });
             
         }
@@ -91,7 +94,7 @@ namespace RSI.API
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Contacts API V1");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Condo Engine API v1");
             });
         }
     }
