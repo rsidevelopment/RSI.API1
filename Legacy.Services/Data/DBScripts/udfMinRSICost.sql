@@ -1,7 +1,6 @@
 ﻿USE [RSI]
 GO
 
-/****** Object: Scalar Function [dbo].[udfMinResortPriceAllMarkup] Script Date: 3/24/2018 10:04:21 PM ******/
 SET ANSI_NULLS ON
 GO
 

@@ -1,9 +1,7 @@
 ﻿using Legacy.Services.Data;
 using Legacy.Services.Interfaces;
-using Legacy.Services.Models;
 using Legacy.Services.Models._ViewModels;
 using Legacy.Services.Models._ViewModels.Unit;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -62,6 +60,12 @@ namespace Legacy.Services
 
                 model.Rows = result.Select(u => new UnitListViewModel()
                 {
+                    Description = u.description.Replace("\n", " "),
+                    ImageURL = $"http://accessrsi.com/dannoJR/ProductImageHandler.ashx?imageid={u.imageID}",
+                    LowestNetRate = u.lowest,
+                    OwnerId = u.ownerID,
+                    UnitId = u.unitID,
+                    UnitName = u.unitName,
                     Address = new AddressViewModel()
                     {
                         City = u.city,
@@ -72,12 +76,6 @@ namespace Legacy.Services
                         StateFullName = u.stateFullName,
                         StreetAddress = u.address.Trim()
                     },
-                    Description = u.description,
-                    ImageURL = $"http://accessrsi.com/dannoJR/ProductImageHandler.ashx?imageid={u.imageID}",
-                    LowestNetRate = u.lowest,
-                    OwnerId = u.ownerID,
-                    UnitId = u.unitID,
-                    UnitName = u.unitName,
                     MaxRows = u.maxrows
                 }).ToList();
 

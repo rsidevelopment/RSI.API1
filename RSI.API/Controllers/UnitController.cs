@@ -22,7 +22,7 @@ namespace RSI.API.Controllers
         [HttpGet]
         public async Task<_ListViewModel<UnitListViewModel>> Get(OwnerType? ownerType, DateTime? checkInStart, DateTime? checkInEnd, 
             string countryCode, string stateCode, string city, BedroomSize? bedroomSize, InventoryType? inventoryType, decimal? maximumNetRate, 
-            int? startRowIndex = 0, int? numberOfRows = 10, string orderBy = "price", string orderDirection = "asc")
+            int? startRowIndex = 1, int? numberOfRows = 10, string orderBy = "price", string orderDirection = "asc")
         {
             var model = new _ListViewModel<UnitListViewModel>();
 

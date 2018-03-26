@@ -41,7 +41,7 @@ namespace RSI.API
             services.AddTransient<ICountriesStatesService, CountriesStatesService>();
             services.AddTransient<IUnitService, UnitService>();
             services.AddTransient<IInventoryService, InventoryService>();
-            services.AddTransient<IReservationService, ReservationService>();
+            services.AddTransient<IBookingService, BookingService>();
 
             services.AddMvcCore()
                 .AddAuthorization()

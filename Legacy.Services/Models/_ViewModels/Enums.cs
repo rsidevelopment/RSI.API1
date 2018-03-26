@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Legacy.Services.Models._ViewModels
+﻿namespace Legacy.Services.Models._ViewModels
 {
     public enum OwnerType
     {
@@ -22,8 +18,8 @@ namespace Legacy.Services.Models._ViewModels
         HotelUnit = -1,
         StudioUnit = 0,
         OneBedroom = 1,
-        TwoBedroom = 2,
-        ThreeBedroom = 3,
-        FourBedroom = 4,
+        TwoBedrooms = 2,
+        ThreeBedrooms = 3,
+        FourBedrooms = 4,
     }
 }

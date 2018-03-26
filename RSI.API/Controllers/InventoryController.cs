@@ -18,11 +18,11 @@ namespace RSI.API.Controllers
             _context = context;
         }
 
-        // GET: api/inventory
-        [HttpGet]
+        // GET: api/inventory/5
+        [HttpGet("{unitId}")]
         public async Task<_ListViewModel<InventoryListViewModel>> Get(int unitId, DateTime? checkInStart, DateTime? checkInEnd, 
             BedroomSize? bedroomSize, InventoryType? inventoryType, decimal? maximumNetRate, 
-            int? startRowIndex = 0, int? numberOfRows = 10, string orderBy = "price", string orderDirection = "asc")
+            int? startRowIndex = 1, int? numberOfRows = 10, string orderBy = "price", string orderDirection = "asc")
         {
             var model = new _ListViewModel<InventoryListViewModel>();
 

@@ -1,14 +1,11 @@
 ﻿USE [RSI]
 GO
 
-/****** Object: SqlProcedure [dbo].[apiUnitSearch] Script Date: 3/24/2018 11:12:33 PM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 
 CREATE PROCEDURE [dbo].[apiUnitSearch] 
 	@OwnerType INT = NULL,
@@ -104,5 +101,5 @@ BEGIN
 	), RecordCount AS ( SELECT COUNT(*) AS MaxRows FROM ListEntries )
 
 	SELECT * from ListEntries, RecordCount
-	 WHERE row  BETWEEN @StartRowIndex AND (@StartRowIndex + @NumberOfRows)
+	 WHERE row  BETWEEN @StartRowIndex AND (@StartRowIndex + @NumberOfRows - 1)
 end
