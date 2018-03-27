@@ -6,6 +6,7 @@ namespace Legacy.Services.Interfaces
 {
     public interface IUnitService
     {
+        Task<UnitDetailsModel> GetUnit(int unitId);
         Task<_ListViewModel<UnitListViewModel>> GetUnits(UnitSearchViewModel unitSearchViewModel);
     }
 }

@@ -54,7 +54,6 @@ namespace Legacy.Services
 
                 model.Rows = result.Select(i => new InventoryListViewModel()
                 {
-                    Adults = i.adults,
                     CheckInDate = i.checkInDate,
                     CheckOutDate = i.checkOutDate,
                     InventoryId = i.inventoryID,
@@ -62,6 +61,7 @@ namespace Legacy.Services
                     KitchenType = i.kitchenType,
                     MaxGuests = i.maxGuests,
                     NetRate = (string.IsNullOrEmpty(i.netRate)) ? 0 : Decimal.Parse(i.netRate),
+                    Privacy= i.adults,
                     Quantity = i.quantity,
                     BedroomSize = ((BedroomSize)Enum.Parse(typeof(BedroomSize), i.unitSize)).ToString().SplitCamelCase(),
                     UnitId = i.unitID,

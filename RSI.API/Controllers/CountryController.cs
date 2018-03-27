@@ -13,8 +13,8 @@ namespace RSI.API.Controllers
     [Route("api/[controller]")]
     public class CountryController : Controller
     {
-        private readonly ICountriesStatesService _context;
-        public CountryController(ICountriesStatesService context)
+        private readonly IGeographyService _context;
+        public CountryController(IGeographyService context)
         {
             _context = context;
         }
@@ -22,12 +22,11 @@ namespace RSI.API.Controllers
         [HttpGet("{filter?}")]
         public async Task<_ListViewModel<_KeyValuePairViewModel>> Get(string filter = null)
         {
-            _ListViewModel<_KeyValuePairViewModel> model = new _ListViewModel<_KeyValuePairViewModel>();
+            var model = new _ListViewModel<_KeyValuePairViewModel>();
 
             try
             {
                 model = await _context.GetCountriesAsync(filter);
-                
             }
             catch (Exception ex)
             {
@@ -44,7 +43,5 @@ namespace RSI.API.Controllers
 
             return model;
         }
-
-        
     }
 }

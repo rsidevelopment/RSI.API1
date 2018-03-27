@@ -7,6 +7,7 @@ namespace Legacy.Services.Models._ViewModels.Unit
         public OwnerType? OwnerType { get; set; }
         public DateTime? CheckInStart { get; set; }
         public DateTime? CheckInEnd { get; set; }
+        public string RegionCode { get; set; }
         public string CountryCode { get; set; }
         public string StateCode { get; set; }
         public string City { get; set; }

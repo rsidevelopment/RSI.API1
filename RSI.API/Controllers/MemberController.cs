@@ -31,7 +31,7 @@ namespace RSI.API.Controllers
             , string sortColumn = "DEFAULT", string sortDirection = "ASC"
             , bool exactMatch = true)
         {
-            _ListViewModel<MemberListViewModel> model = new _ListViewModel<MemberListViewModel>();
+            var model = new _ListViewModel<MemberListViewModel>();
 
             try
             {
@@ -71,7 +71,7 @@ namespace RSI.API.Controllers
         [HttpGet("{rsiId}")]
         public async Task<MemberInfoViewModel> Get(int rsiId)
         {
-            MemberInfoViewModel model = new MemberInfoViewModel();
+            var model = new MemberInfoViewModel();
 
             try
             {
@@ -100,7 +100,7 @@ namespace RSI.API.Controllers
 
             try
             {
-                List<FamilyMemberViewModel> model = new List<FamilyMemberViewModel>();
+                var model = new List<FamilyMemberViewModel>();
 
                 returnModel = await _context.GetFamilyAsync(id);
             }
@@ -120,7 +120,7 @@ namespace RSI.API.Controllers
 
             try
             {
-                List<FamilyMemberViewModel> family = value.ToObject<List<FamilyMemberViewModel>>();
+                var family = value.ToObject<List<FamilyMemberViewModel>>();
                 (bool isSuccess, string message) = await _context.AddUpdateFamilyAsync(id, family);
                 returnObj.is_success = isSuccess;
                 returnObj.message = message;
@@ -136,7 +136,7 @@ namespace RSI.API.Controllers
         [HttpGet("{id}/upgrade")]
         public async Task<MemberUpgradeViewModel> GetUpgrade(int id)
         {
-            MemberUpgradeViewModel model = new MemberUpgradeViewModel();
+            var model = new MemberUpgradeViewModel();
 
             try
             {
@@ -156,7 +156,7 @@ namespace RSI.API.Controllers
         [HttpPost("{id}/upgrade")]
         public async Task<MemberUpgradeViewModel> AddUpdateUpgrade(int id, [FromBody] JObject value)
         {
-            MemberUpgradeViewModel model = new MemberUpgradeViewModel();
+            var model = new MemberUpgradeViewModel();
 
             try
             {
@@ -179,7 +179,7 @@ namespace RSI.API.Controllers
         [HttpGet("{id}/referral")]
         public async Task<_ListViewModel<ReferralViewModel>> Referral(int id)
         {
-            _ListViewModel<ReferralViewModel> model = new _ListViewModel<ReferralViewModel>();
+            var model = new _ListViewModel<ReferralViewModel>();
 
             try
             {
@@ -207,7 +207,7 @@ namespace RSI.API.Controllers
         [HttpGet("{rsiId}/travel")]
         public async Task<_ListViewModel<TravelDetailViewModel>> Travel(int rsiId)
         {
-            _ListViewModel<TravelDetailViewModel> model = new _ListViewModel<TravelDetailViewModel>();
+            var model = new _ListViewModel<TravelDetailViewModel>();
 
             try
             {
@@ -229,7 +229,7 @@ namespace RSI.API.Controllers
         [HttpPost("{id}/referral")]
         public async Task<_ListViewModel<ReferralViewModel>> UpdateReferral(int id, [FromBody]JArray value)
         {
-            _ListViewModel<ReferralViewModel> model = new _ListViewModel<ReferralViewModel>();
+            var model = new _ListViewModel<ReferralViewModel>();
 
             try
             {
@@ -267,7 +267,7 @@ namespace RSI.API.Controllers
         { 
             try
             {
-                MemberInfoViewModel model = value.ToObject<MemberInfoViewModel>();
+                var model = value.ToObject<MemberInfoViewModel>();
                 model.PrimaryMember.RSIId = id;
                 model = await _context.UpdateMemberAsync(id, model);
                 

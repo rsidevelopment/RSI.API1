@@ -13,8 +13,9 @@ CREATE PROCEDURE [dbo].[apiUnitSearch]
 	@ResortID INT = NULL,
 	@StartDate DATETIME = NULL, 
 	@EndDate DATETIME = NULL,
-	@CountryCode VARCHAR(10) = NULL,
-	@StateCode VARCHAR(10) = NULL,
+	@RegionCode VARCHAR(50) = NULL,
+	@CountryCode VARCHAR(50) = NULL,
+	@StateCode VARCHAR(50) = NULL,
 	@City VARCHAR(100) = NULL,
 	@BedroomSize INT = NULL,
 	@InventoryType VARCHAR(50) = NULL,
@@ -32,12 +33,14 @@ BEGIN
 	if @InventoryID IS NOT NULL AND @InventoryID > 0
 	begin
 		set @ResortID = null
+		set @RegionCode = null
 		set @CountryCode = null
 		set @StateCode = null
 		set @City = null
 	end
 	else if @ResortID IS NOT NULL AND @ResortID > 0
 	begin
+		set @RegionCode = null
 		set @CountryCode = null
 		set @StateCode = null
 		set @City = null
@@ -64,6 +67,8 @@ BEGIN
 		U.thumbId as imageID,
 		U.name as unitName,
 		U.address, 
+		U.regioncode,
+		R.regiondescription AS regionFullName,
 		U.city, 
 		U.state AS stateCode,
 		CASE WHEN S.ref IS NOT NULL THEN CAST(S.v AS VARCHAR(255)) ELSE U.state END AS stateFullName,
@@ -75,7 +80,8 @@ BEGIN
 
 	FROM units AS U INNER JOIN
 		 translator C ON U.country = C.ref AND C.language = 'EN' AND C.type = 'COUNTRY' LEFT OUTER JOIN
-		 translator S ON U.state = S.ref AND S.language = 'EN' AND S.type = '_S_' + U.country
+		 translator S ON U.state = S.ref AND S.language = 'EN' AND S.type = '_S_' + U.country LEFT OUTER JOIN
+		 RCI_Regions R ON U.regioncode = R.regioncode
 
 	WHERE EXISTS (
 		SELECT * 
@@ -95,6 +101,7 @@ BEGIN
 		AND ((@OwnerType IS NULL) OR 
 			 (@OwnerType=1 AND U.ownerid = 100) OR
 			 (@OwnerType=2 AND U.ownerid <> 100))
+		AND U.regioncode = ISNULL(@RegionCode, U.regioncode)
 		AND U.country = ISNULL(@CountryCode, U.country)
 		AND U.state = ISNULL(@StateCode, U.state)
 		AND LTRIM(RTRIM(U.city)) = ISNULL(@City, LTRIM(RTRIM(U.city)))

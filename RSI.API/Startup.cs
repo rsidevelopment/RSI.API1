@@ -38,7 +38,7 @@ namespace RSI.API
             services.AddTransient<IMemberService, MemberServices>();
             services.AddTransient<IOrganizationService, OrganizationService>();
             services.AddTransient<IPackageService, PackageService>();
-            services.AddTransient<ICountriesStatesService, CountriesStatesService>();
+            services.AddTransient<IGeographyService, GeographyService>();
             services.AddTransient<IUnitService, UnitService>();
             services.AddTransient<IInventoryService, InventoryService>();
             services.AddTransient<IBookingService, BookingService>();

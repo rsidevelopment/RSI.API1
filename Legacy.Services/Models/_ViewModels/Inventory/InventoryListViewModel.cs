@@ -23,8 +23,8 @@ namespace Legacy.Services.Models._ViewModels.Inventory
         public int? MaxGuests { get; set; }
         [JsonProperty(PropertyName = "kitchen_type")]
         public string KitchenType { get; set; }
-        [JsonProperty(PropertyName = "adults")]
-        public int? Adults { get; set; }
+        [JsonProperty(PropertyName = "privacy")]
+        public int? Privacy { get; set; }
         [JsonProperty(PropertyName = "inventory_type")]
         public string InventoryType { get; set; }
         [JsonIgnore]

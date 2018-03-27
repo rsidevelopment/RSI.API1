@@ -20,7 +20,5 @@ namespace RSI.API.Controllers
         {
             _context = context;
         }
-
-        
     }
 }

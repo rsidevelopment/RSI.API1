@@ -1,8 +1,5 @@
 ﻿using Legacy.Services.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Legacy.Services.Data
 {
@@ -21,6 +18,8 @@ namespace Legacy.Services.Data
         public DbSet<InventoryModel> Inventories { get; set; }
         public DbSet<UnitModel> Units { get; set; }
         public DbSet<ReservationModel> Reservations { get; set; }
+        public DbSet<RegionsModel> Regions { get; set; }
+        public DbSet<AmenitiesModel> Amenities { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -11,23 +11,22 @@ using Microsoft.AspNetCore.Mvc;
 namespace RSI.API.Controllers
 {
     [Route("api/[controller]")]
-    public class StateController : Controller
+    public class RegionController : Controller
     {
         private readonly IGeographyService _context;
-
-        public StateController(IGeographyService context)
+        public RegionController(IGeographyService context)
         {
             _context = context;
         }
         // GET: api/<controller>
-        [HttpGet("{countryCode}/{filter?}")]
-        public async Task<_ListViewModel<_KeyValuePairViewModel>> Get(string countryCode, string filter = null)
+        [HttpGet("{filter?}")]
+        public async Task<_ListViewModel<_KeyValuePairViewModel>> Get(string filter = null)
         {
             var model = new _ListViewModel<_KeyValuePairViewModel>();
 
             try
             {
-                model = await _context.GetStatesAsync(countryCode, filter);
+                model = await _context.GetRegionsAsync(filter);
             }
             catch (Exception ex)
             {

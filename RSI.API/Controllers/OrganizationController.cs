@@ -28,7 +28,7 @@ namespace RSI.API.Controllers
         [HttpGet]
         public async Task<_ListViewModel<_KeyValuePairViewModel>> Get()
         {
-            _ListViewModel<_KeyValuePairViewModel> model = new _ListViewModel<_KeyValuePairViewModel>();
+            var model = new _ListViewModel<_KeyValuePairViewModel>();
 
             try
             {
@@ -53,7 +53,7 @@ namespace RSI.API.Controllers
         [HttpGet("{rsiOrgId}/package")]
         public async Task<_ListViewModel<PackageListViewModel>> GetPackages(int rsiOrgId)
         {
-            _ListViewModel<PackageListViewModel> model = new _ListViewModel<PackageListViewModel>();
+            var model = new _ListViewModel<PackageListViewModel>();
 
             try
             {
@@ -69,7 +69,5 @@ namespace RSI.API.Controllers
 
             return model;
         }
-        
-      
     }
 }

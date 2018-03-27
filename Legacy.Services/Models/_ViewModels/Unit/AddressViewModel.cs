@@ -18,5 +18,9 @@ namespace Legacy.Services.Models._ViewModels.Unit
         public string CountryCode { get; set; }
         [JsonProperty(PropertyName = "country_full_name")]
         public string CountryFullName { get; set; }
+        [JsonProperty(PropertyName = "region_code")]
+        public string RegionCode { get; set; }
+        [JsonProperty(PropertyName = "region_full_name")]
+        public string RegionFullName { get; set; }
     }
 }

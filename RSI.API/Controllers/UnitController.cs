@@ -18,10 +18,37 @@ namespace RSI.API.Controllers
             _context = context;
         }
 
+        // GET: api/unit/5 
+        [HttpGet("{unitId}")]
+        public async Task<UnitDetailsModel> Get(int unitId)
+        {
+            var model = new UnitDetailsModel();
+
+            try
+            {
+                model = await _context.GetUnit(unitId);
+
+            }
+            catch (Exception ex)
+            {
+                if (model == null)
+                    model = new UnitDetailsModel();
+
+                if (model.Message.Length > 0)
+                    model.Message += " | ";
+                else
+                    model.Message = "Error: ";
+
+                model.Message += ex.Message;
+            }
+
+            return model;
+        }
+
         // GET: api/unit    
         [HttpGet]
         public async Task<_ListViewModel<UnitListViewModel>> Get(OwnerType? ownerType, DateTime? checkInStart, DateTime? checkInEnd, 
-            string countryCode, string stateCode, string city, BedroomSize? bedroomSize, InventoryType? inventoryType, decimal? maximumNetRate, 
+            string regionCode, string countryCode, string stateCode, string city, BedroomSize? bedroomSize, InventoryType? inventoryType, decimal? maximumNetRate, 
             int? startRowIndex = 1, int? numberOfRows = 10, string orderBy = "price", string orderDirection = "asc")
         {
             var model = new _ListViewModel<UnitListViewModel>();
@@ -33,6 +60,7 @@ namespace RSI.API.Controllers
                     OwnerType = ownerType,
                     CheckInStart = checkInStart,
                     CheckInEnd = checkInEnd,
+                    RegionCode = regionCode,
                     CountryCode = countryCode,
                     StateCode = stateCode,
                     City = city,
