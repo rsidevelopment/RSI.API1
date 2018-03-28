@@ -32,6 +32,11 @@ namespace Legacy.Services
             {
                 model = await
                        (from u in _context.Units
+                        join c in _context.Translators on new { Reference = u.country, Type = "COUNTRY", Language = "EN" } equals new { c.Reference, c.Type, c.Language }
+                        join s in _context.Translators on new { Reference = u.state, Type = "_S_" + u.country, Language = "EN" } equals new { s.Reference, s.Type, s.Language  } into States
+                        from St in States.DefaultIfEmpty()
+                        join r in _context.Regions on u.regioncode equals r.regioncode into Regions
+                        from Rg in Regions.DefaultIfEmpty()
                         where u.keyid == unitId
                         select new UnitDetailsModel()
                         {
@@ -44,12 +49,12 @@ namespace Legacy.Services
                             {
                                 City = u.city,
                                 CountryCode = u.country,
-                                //CountryFullName = u.countryFullName,
+                                CountryFullName = c.Value,
                                 PostalCode = u.zip,
                                 RegionCode = u.regioncode,
-                                //RegionFullName = u.regionFullName,
+                                RegionFullName = Rg.regiondescription,
                                 StateCode = u.state,
-                                //StateFullName = u.stateFullName,
+                                StateFullName = St.Value,
                                 StreetAddress = u.address.Trim()
                             }
                         }).FirstOrDefaultAsync<UnitDetailsModel>();
