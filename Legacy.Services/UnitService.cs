@@ -1,6 +1,7 @@
 ﻿using Legacy.Services.Data;
 using Legacy.Services.Interfaces;
 using Legacy.Services.Models._ViewModels;
+using Legacy.Services.Models._ViewModels.Booking;
 using Legacy.Services.Models._ViewModels.Unit;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -68,7 +69,7 @@ namespace Legacy.Services
                 {
                     model.Amenities = await
                         (from a in _context.Amenities
-                         where a.keyid == unitId
+                         where a.unitkeyid == unitId
                          orderby a.sorder
                          select new Amenity()
                          {
@@ -89,6 +90,77 @@ namespace Legacy.Services
             }
             catch (Exception ex)
             {
+                model.Message = $"Error: {ex.Message}";
+            }
+
+            return model;
+        }
+
+        public async Task<UnitDetailsModel> GetUnitByRequest(BookingRequestViewModel request)
+        {
+            UnitDetailsModel model = new UnitDetailsModel();
+
+            try
+            {
+                
+                model = await (from u in _context.Units
+                               join i in _context.Inventories on u.keyid equals i.unitkeyid
+                               join c in _context.Translators on new { Reference = u.country, Type = "COUNTRY", Language = "EN" } equals new { c.Reference, c.Type, c.Language }
+                               join s in _context.Translators on new { Reference = u.state, Type = "_S_" + u.country, Language = "EN" } equals new { s.Reference, s.Type, s.Language } into States
+                               from St in States.DefaultIfEmpty()
+                               join r in _context.Regions on u.regioncode equals r.regioncode into Regions
+                               from Rg in Regions.DefaultIfEmpty()
+                               where i.keyid == request.InventoryId
+                               select new UnitDetailsModel
+                               {
+                                   Address = new AddressViewModel()
+                                   {
+                                       City = u.city.Trim(),
+                                       CountryCode = u.country.Trim(),
+                                       CountryFullName = c.Value.Trim(),
+                                       PostalCode = u.zip.Trim(),
+                                       RegionCode = u.regioncode.Trim(),
+                                       RegionFullName = Rg.regiondescription.Trim(),
+                                       StateCode = u.state.Trim(),
+                                       StateFullName = St.Value.Trim(),
+                                       StreetAddress = u.address
+                                   },
+                                   Description = u.info.Trim(),
+                                   ImageURL = $"http://accessrsi.com/dannoJR/ProductImageHandler.ashx?imageid={u.thumbID}",
+                                   OwnerId = u.ownerid,
+                                   UnitId = u.keyid,
+                                   UnitName = u.name
+
+
+                               }).FirstOrDefaultAsync();
+                if (model != null)
+                {
+                    model.Amenities = await
+                        (from a in _context.Amenities
+                         where a.unitkeyid == model.UnitId
+                         orderby a.sorder
+                         select new Amenity()
+                         {
+                             Location = a.location,
+                             Name = a.ref1,
+                             Distance = a.distance,
+                             MK = a.mk
+                         }).ToListAsync();
+
+                    var urgentInfo = await _context.LoadStoredProc("dbo.vipUrgentInfo")
+                            .WithSqlParam("resortID", model.UnitId)
+                            .ExecuteStoredProcAsync<vipUrgentInfoResult>();
+
+                    model.UrgentInfo = urgentInfo.Select(u => u.urgentInfo).ToList();
+                }
+
+                model.Message = "Success";
+            }
+            catch (Exception ex)
+            {
+                if (model == null)
+                    model = new UnitDetailsModel();
+
                 model.Message = $"Error: {ex.Message}";
             }
 

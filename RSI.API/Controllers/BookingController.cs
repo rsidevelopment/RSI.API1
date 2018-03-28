@@ -13,9 +13,11 @@ namespace RSI.API.Controllers
     public class BookingController : Controller
     {
         private readonly IBookingService _context;
-        public BookingController(IBookingService context)
+        
+        public BookingController(IBookingService context, IInventoryService inventoryService)
         {
             _context = context;
+            
         }
 
         // POST: api/unit    

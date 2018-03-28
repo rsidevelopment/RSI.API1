@@ -2,7 +2,7 @@
 
 namespace Legacy.Services.Models._ViewModels.Unit
 {
-    public class UnitListViewModel
+    public class UnitListViewModel: _ItemViewModel
     {
         [JsonProperty(PropertyName = "unit_id")]
         public int UnitId { get; set; }
