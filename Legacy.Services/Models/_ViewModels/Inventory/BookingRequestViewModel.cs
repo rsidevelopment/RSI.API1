@@ -1,4 +1,4 @@
-﻿namespace Legacy.Services.Models._ViewModels.Booking
+﻿namespace Legacy.Services.Models._ViewModels.Inventory
 {
     public class BookingRequestViewModel
     {

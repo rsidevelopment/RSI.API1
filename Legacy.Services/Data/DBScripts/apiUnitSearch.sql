@@ -64,6 +64,7 @@ BEGIN
 
 		U.keyid as unitID,
 		U.ownerid as ownerID,
+		U.origionalid as origionalID,
 		U.thumbId as imageID,
 		U.name as unitName,
 		U.address, 

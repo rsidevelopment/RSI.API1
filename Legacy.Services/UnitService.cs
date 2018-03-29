@@ -1,7 +1,6 @@
 ﻿using Legacy.Services.Data;
 using Legacy.Services.Interfaces;
 using Legacy.Services.Models._ViewModels;
-using Legacy.Services.Models._ViewModels.Booking;
 using Legacy.Services.Models._ViewModels.Unit;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -21,72 +20,13 @@ namespace Legacy.Services
             _context = context;
         }
 
-        public partial class vipUrgentInfoResult
-        {
-            public string urgentInfo { get; set; }
-        }
         public async Task<UnitDetailsModel> GetUnit(int unitId)
         {
             var model = new UnitDetailsModel();
 
             try
             {
-                model = await
-                       (from u in _context.Units
-                        join c in _context.Translators on new { Reference = u.country, Type = "COUNTRY", Language = "EN" } equals new { c.Reference, c.Type, c.Language }
-                        join s in _context.Translators on new { Reference = u.state, Type = "_S_" + u.country, Language = "EN" } equals new { s.Reference, s.Type, s.Language  } into States
-                        from St in States.DefaultIfEmpty()
-                        join r in _context.Regions on u.regioncode equals r.regioncode into Regions
-                        from Rg in Regions.DefaultIfEmpty()
-                        where u.keyid == unitId
-                        select new UnitDetailsModel()
-                        {
-                            Description = u.info,
-                            ImageURL = $"http://accessrsi.com/dannoJR/ProductImageHandler.ashx?imageid={u.thumbID}",
-                            OwnerId = u.ownerid,
-                            UnitId = u.keyid,
-                            UnitName = u.name,
-                            Address = new AddressViewModel()
-                            {
-                                City = u.city,
-                                CountryCode = u.country,
-                                CountryFullName = c.Value,
-                                PostalCode = u.zip,
-                                RegionCode = u.regioncode,
-                                RegionFullName = Rg.regiondescription,
-                                StateCode = u.state,
-                                StateFullName = St.Value,
-                                StreetAddress = u.address.Trim()
-                            }
-                        }).FirstOrDefaultAsync<UnitDetailsModel>();
-
-                //R.regiondescription AS regionFullName,
-                //CASE WHEN S.ref IS NOT NULL THEN CAST(S.v AS VARCHAR(255)) ELSE U.state END AS stateFullName,
-                //      U.zip AS postalCode, 
-                //CASE WHEN C.ref IS NOT NULL THEN CAST(C.v AS VARCHAR(255)) ELSE U.country END AS countryFullName,
-
-                if (model != null)
-                {
-                    model.Amenities = await
-                        (from a in _context.Amenities
-                         where a.unitkeyid == unitId
-                         orderby a.sorder
-                         select new Amenity()
-                         {
-                             Location = a.location,
-                             Name = a.ref1,
-                             Distance = a.distance,
-                             MK = a.mk
-                         }).ToListAsync();
-
-                    var urgentInfo = await _context.LoadStoredProc("dbo.vipUrgentInfo")
-                            .WithSqlParam("resortID", unitId)
-                            .ExecuteStoredProcAsync<vipUrgentInfoResult>();
-
-                    model.UrgentInfo = urgentInfo.Select(u => u.urgentInfo).ToList();
-                }
-
-                model.Message = "Success";
+                model = await GetUnitFromDB(unitId, null);
             }
             catch (Exception ex)
             {
@@ -96,71 +36,16 @@ namespace Legacy.Services
             return model;
         }
 
-        public async Task<UnitDetailsModel> GetUnitByRequest(BookingRequestViewModel request)
+        public async Task<UnitDetailsModel> GetUnitByInventoryId(int inventoryId)
         {
             UnitDetailsModel model = new UnitDetailsModel();
 
             try
             {
-                
-                model = await (from u in _context.Units
-                               join i in _context.Inventories on u.keyid equals i.unitkeyid
-                               join c in _context.Translators on new { Reference = u.country, Type = "COUNTRY", Language = "EN" } equals new { c.Reference, c.Type, c.Language }
-                               join s in _context.Translators on new { Reference = u.state, Type = "_S_" + u.country, Language = "EN" } equals new { s.Reference, s.Type, s.Language } into States
-                               from St in States.DefaultIfEmpty()
-                               join r in _context.Regions on u.regioncode equals r.regioncode into Regions
-                               from Rg in Regions.DefaultIfEmpty()
-                               where i.keyid == request.InventoryId
-                               select new UnitDetailsModel
-                               {
-                                   Address = new AddressViewModel()
-                                   {
-                                       City = u.city.Trim(),
-                                       CountryCode = u.country.Trim(),
-                                       CountryFullName = c.Value.Trim(),
-                                       PostalCode = u.zip.Trim(),
-                                       RegionCode = u.regioncode.Trim(),
-                                       RegionFullName = Rg.regiondescription.Trim(),
-                                       StateCode = u.state.Trim(),
-                                       StateFullName = St.Value.Trim(),
-                                       StreetAddress = u.address
-                                   },
-                                   Description = u.info.Trim(),
-                                   ImageURL = $"http://accessrsi.com/dannoJR/ProductImageHandler.ashx?imageid={u.thumbID}",
-                                   OwnerId = u.ownerid,
-                                   UnitId = u.keyid,
-                                   UnitName = u.name
-
-
-                               }).FirstOrDefaultAsync();
-                if (model != null)
-                {
-                    model.Amenities = await
-                        (from a in _context.Amenities
-                         where a.unitkeyid == model.UnitId
-                         orderby a.sorder
-                         select new Amenity()
-                         {
-                             Location = a.location,
-                             Name = a.ref1,
-                             Distance = a.distance,
-                             MK = a.mk
-                         }).ToListAsync();
-
-                    var urgentInfo = await _context.LoadStoredProc("dbo.vipUrgentInfo")
-                            .WithSqlParam("resortID", model.UnitId)
-                            .ExecuteStoredProcAsync<vipUrgentInfoResult>();
-
-                    model.UrgentInfo = urgentInfo.Select(u => u.urgentInfo).ToList();
-                }
-
-                model.Message = "Success";
+                model = await GetUnitFromDB(null, inventoryId);
             }
             catch (Exception ex)
             {
-                if (model == null)
-                    model = new UnitDetailsModel();
-
                 model.Message = $"Error: {ex.Message}";
             }
 
@@ -170,6 +55,7 @@ namespace Legacy.Services
         class apiUnitSearchResult
         {
             public int unitID { get; set; }
+            public string origionalID { get; set; }
             public int ownerID { get; set; }
             public int imageID { get; set; }
             public string unitName { get; set; }
@@ -217,6 +103,7 @@ namespace Legacy.Services
                     ImageURL = $"http://accessrsi.com/dannoJR/ProductImageHandler.ashx?imageid={u.imageID}",
                     LowestNetRate = u.lowest,
                     OwnerId = u.ownerID,
+                    OriginalUnitId = u.origionalID,
                     UnitId = u.unitID,
                     UnitName = u.unitName,
                     Address = new AddressViewModel()
@@ -245,5 +132,80 @@ namespace Legacy.Services
             return model;
         }
 
+        public partial class vipUrgentInfoResult
+        {
+            public string urgentInfo { get; set; }
+        }
+        async Task<UnitDetailsModel> GetUnitFromDB(int? unitId, int? inventoryId)
+        {
+            var model = await
+                   (from u in _context.Units
+                    join i in _context.Inventories on u.keyid equals i.unitkeyid
+                    join c in _context.Translators on new { Reference = u.country, Type = "COUNTRY", Language = "EN" } equals new { c.Reference, c.Type, c.Language }
+                    join s in _context.Translators on new { Reference = u.state, Type = "_S_" + u.country, Language = "EN" } equals new { s.Reference, s.Type, s.Language } into States
+                    from St in States.DefaultIfEmpty()
+                    join r in _context.Regions on u.regioncode equals r.regioncode into Regions
+                    from Rg in Regions.DefaultIfEmpty()
+                    where u.keyid == (unitId ?? u.keyid)
+                    && i.keyid == (inventoryId ?? i.keyid)
+                    select new UnitDetailsModel()
+                    {
+                        Description = u.info,
+                        ImageURL = $"http://accessrsi.com/dannoJR/ProductImageHandler.ashx?imageid={u.thumbID}",
+                        OwnerId = u.ownerid,
+                        OriginalUnitId = u.origionalid,
+                        UnitId = u.keyid,
+                        UnitName = u.name,
+                        Address = new AddressViewModel()
+                        {
+                            City = u.city,
+                            CountryCode = u.country,
+                            CountryFullName = c.Value,
+                            PostalCode = u.zip,
+                            RegionCode = u.regioncode,
+                            RegionFullName = Rg.regiondescription,
+                            StateCode = u.state,
+                            StateFullName = St.Value,
+                            StreetAddress = u.address.Trim()
+                        }
+                    }).FirstOrDefaultAsync<UnitDetailsModel>();
+
+            if (model != null)
+            {
+                model.Amenities = await
+                    (from a in _context.Amenities
+                     where a.unitkeyid == unitId
+                     orderby a.sorder
+                     select new Amenity()
+                     {
+                         Location = a.location,
+                         Name = a.ref1,
+                         Distance = a.distance,
+                         MK = a.mk
+                     }).ToListAsync();
+
+                var urgentInfo = await _context.LoadStoredProc("dbo.vipUrgentInfo")
+                        .WithSqlParam("resortID", unitId)
+                        .ExecuteStoredProcAsync<vipUrgentInfoResult>();
+
+                model.UrgentInfo = urgentInfo.Select(u => u.urgentInfo).ToList();
+
+                if (model.OwnerId == 100)
+                {
+                    model.AdditionalImageURLs = new List<string>()
+                    { $"http://rci.accessrsi.com/api/rci/getImage?resortId={model.OriginalUnitId}" };
+                }
+                else
+                {
+                    model.AdditionalImageURLs = await
+                        (from p in _context.Pics
+                         where p.ptype == "U_PIC" && p.ref1 == model.UnitId.ToString()
+                         select $"http://accessrsi.com/dannoJR/ProductImageHandler.ashx?imageid={p.keyid}").ToListAsync();
+                }
+            }
+
+            if (model != null) model.Message = "Success";
+            return model ?? new UnitDetailsModel() { Message = "Error: Unit Not Found" };
+        }
     }
 }

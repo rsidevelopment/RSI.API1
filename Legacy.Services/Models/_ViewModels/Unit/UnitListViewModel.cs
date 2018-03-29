@@ -6,6 +6,19 @@ namespace Legacy.Services.Models._ViewModels.Unit
     {
         [JsonProperty(PropertyName = "unit_id")]
         public int UnitId { get; set; }
+        string _originalUnitId;
+        [JsonProperty(PropertyName = "original_unit_id")]
+        public string OriginalUnitId
+        {
+            get
+            {
+                return _originalUnitId ?? string.Empty;
+            }
+            set
+            {
+                _originalUnitId = value;
+            }
+        }
         [JsonProperty(PropertyName = "owner_id")]
         public int? OwnerId { get; set; }
         [JsonProperty(PropertyName = "unit_name")]
