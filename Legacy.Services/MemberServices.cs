@@ -414,8 +414,9 @@ namespace Legacy.Services
             {
                 var jobData = _hfContext.NewRSIJobData(model);
 
-                BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInLegacyRSIDb(jobData.jobId, rsiId));
-                BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInRSIDb(jobData.jobId, rsiId));
+                UpdateMemberInLegacyRSIDb(jobData.jobId, rsiId);
+                //BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInLegacyRSIDb(jobData.jobId, rsiId));
+                //BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInRSIDb(jobData.jobId, rsiId));
 
                 return new MemberInfoViewModel() { Message = "Success" };
             }
@@ -438,7 +439,7 @@ namespace Legacy.Services
 
                 //primary info
                 member.fname = model.PrimaryMember.FirstName;
-                member.MiddleInitial = model.PrimaryMember.MiddleName;
+                member.MiddleInitial = model.PrimaryMember.MiddleInitial;
                 member.lname = model.PrimaryMember.LastName;
                 member.BirthDate = model.PrimaryMember.DateOfBirth;
 
@@ -455,11 +456,14 @@ namespace Legacy.Services
 
                 //secondary info
                 member.FirstName2 = model.SecondaryMember.FirstName;
-                member.MiddleInitial2 = model.SecondaryMember.MiddleName;
+                member.MiddleInitial2 = model.SecondaryMember.MiddleInitial;
                 member.LastName2 = model.SecondaryMember.LastName;
                 member.BirthDate2 = model.SecondaryMember.DateOfBirth;
 
-                member.email2 = model.SecondaryMember.Email;
+                //member.email2 = model.SecondaryMember.Email;
+                member.Family = model.FamilyMemberString;
+                member.IsActive = true;
+                member.HotelRewards = model.PackageInfo.Points.ToString();
 
                 #region Unmapped MemberModel fields
                 //member.MemberId = model. ;
@@ -476,7 +480,6 @@ namespace Legacy.Services
                 //member.LoginIp = model. ;
                 //member.Extension1 = model. ;
                 //member.Extension2 = model. ;
-                //member.IsActive = model. ;
                 //member.Comments = model. ;
                 //member.AddRep = model. ;
                 //member.AddProvider = model. ;
@@ -485,7 +488,6 @@ namespace Legacy.Services
                 //member.RenewalDate = model. ;
                 //member.ActivationDate = model. ;
                 //member.DR = model. ;
-                //member.HotelRewards = model. ;
                 //member.SentToDR = model. ;
                 //member.DateSentToDR = model. ;
                 //member.Company = model. ;
@@ -505,7 +507,6 @@ namespace Legacy.Services
                 //member.RejectReason = model. ;
                 //member.CheckInfo = model. ;
                 //member.TemplateAddDate = model. ;
-                //member.Family = model. ;
                 //member.CruiseRewards = model. ;
                 //member.CondoRewards = model. ;
                 //member.OrganizationCompany = model. ;
@@ -602,20 +603,20 @@ namespace Legacy.Services
             .WithSqlParam("FirstName2", model.SecondaryMember.FirstName)
             .WithSqlParam("MiddleName2", model.SecondaryMember.MiddleName)
             .WithSqlParam("LastName2", model.SecondaryMember.LastName)
-            .WithSqlParam("Family", null)
+            .WithSqlParam("Family", model.FamilyMemberString)
             .WithSqlParam("Phone1", model.PrimaryMember.HomePhone)
-            .WithSqlParam("Phone2", model.SecondaryMember.HomePhone)
+            .WithSqlParam("Phone2", model.PrimaryMember.MobilePhone)
             .WithSqlParam("Email1", model.PrimaryMember.Email)
-            .WithSqlParam("Email2", model.SecondaryMember.Email)
+            .WithSqlParam("Email2", null)
             .WithSqlParam("Address1", model.PrimaryMember.Address1)
-            .WithSqlParam("Address2", model.SecondaryMember.Address1)
+            .WithSqlParam("Address2", model.PrimaryMember.Address2)
             .WithSqlParam("City", model.PrimaryMember.City)
             .WithSqlParam("StateCode", model.PrimaryMember.State)
             .WithSqlParam("PostalCode", model.PrimaryMember.PostalCode)
             .WithSqlParam("CountryCode", model.PrimaryMember.Country)
-            .WithSqlParam("CondoRewards", null)
-            .WithSqlParam("CruiseRewards", null)
-            .WithSqlParam("HotelRewards", null)
+            .WithSqlParam("CondoRewards", 0)
+            .WithSqlParam("CruiseRewards", 0)
+            .WithSqlParam("HotelRewards", model.PackageInfo.Points.ToString())
             .WithSqlParam("SalesAmount", null)
             .WithSqlParam("Note", null)
             .WithSqlParam("BlockedReason", null)
@@ -624,7 +625,7 @@ namespace Legacy.Services
             .WithSqlParam("BlockedDate", null)
             .WithSqlParam("ExpirationDate", null)
             .WithSqlParam("IsEmailOptOut", null)
-            .WithSqlParam("IsActive", null)
+            .WithSqlParam("IsActive", true)
             .WithSqlParam("IsGuest", null)
             .WithSqlParam("IsComped", null)
             .ExecuteStoredProcAsync<int>();
@@ -664,7 +665,7 @@ namespace Legacy.Services
             .WithSqlParam("BlockedDate", null)
             .WithSqlParam("DateOfBirth", null)
             .WithSqlParam("ExpirationDate", null)
-            .WithSqlParam("IsActive", null)
+            .WithSqlParam("IsActive", true)
             .WithSqlParam("IsMilitary", null)
             .ExecuteStoredProcAsync<int>();
             #endregion MemberUpdateCRM
@@ -687,7 +688,7 @@ namespace Legacy.Services
             .WithSqlParam("PostalCode", model.PrimaryMember.PostalCode)
             .WithSqlParam("CountryCode", model.PrimaryMember.Country)
             .WithSqlParam("NOTES", null)
-            .WithSqlParam("IsActive", null)
+            .WithSqlParam("IsActive", true)
             .WithSqlParam("Phone1", model.PrimaryMember.HomePhone)
             .WithSqlParam("Phone2", model.SecondaryMember.HomePhone)
             .WithSqlParam("Email1", model.PrimaryMember.Email)
