@@ -14,7 +14,7 @@ using Newtonsoft.Json.Linq;
 
 namespace RSI.API.Controllers
 {
-    [Route("api/[controller]"), Authorize]
+    [Route("api/[controller]")]//, Authorize]
     public class MemberController : Controller
     {
         private readonly IMemberService _context;

@@ -1,4 +1,5 @@
-﻿using Legacy.Services.Data;
+﻿using Hangfire;
+using Legacy.Services.Data;
 using Legacy.Services.Interfaces;
 using Legacy.Services.Models;
 using Legacy.Services.Models._ViewModels;
@@ -11,19 +12,23 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Legacy.Services
 {
     public class MemberServices : IMemberService
     {
-        private readonly LegacyDbContext _context;
+        private readonly RSIDbContext _rsiContext;
+        private readonly LegacyDbContext _legacyContext;
+        private readonly HangFireDbContext _hfContext;
         private readonly IPackageService _packageService;
 
-        public MemberServices(LegacyDbContext context, IPackageService packageService)
+        public MemberServices(RSIDbContext rsiContext, LegacyDbContext legacyContext, HangFireDbContext hfContext, IPackageService packageService)
         {
-            _context = context;
+            _rsiContext = rsiContext;
+            _legacyContext = legacyContext;
+            _hfContext = hfContext;
             _packageService = packageService;
         }
 
@@ -37,7 +42,7 @@ namespace Legacy.Services
                 //int age = now.Year - tmp.ActivationDate.GetValueOrDefault().Year;
                 //if (tmp.ActivationDate.GetValueOrDefault() > now.AddYears(-age)) age--;
 
-                MemberModel member = await _context.Users.FirstOrDefaultAsync(x => x.MemberId == rsiId);
+                MemberModel member = await _legacyContext.Users.FirstOrDefaultAsync(x => x.MemberId == rsiId);
                 if (member != null && member.MemberId > 0)
                 {
                     using (var conn = new SqlConnection(SqlHelper.GetConnectionString()))
@@ -141,7 +146,7 @@ namespace Legacy.Services
 
             try
             {
-                var tmp = await _context.UpgradeAudits.FirstOrDefaultAsync(x => x.RSIId == rsiId);
+                var tmp = await _legacyContext.UpgradeAudits.FirstOrDefaultAsync(x => x.RSIId == rsiId);
 
                 if(tmp != null && tmp.UpgradeAuditId > 0)
                 {
@@ -185,7 +190,7 @@ namespace Legacy.Services
             {
                 if(model.UpgradeAuditId < 1)
                 {
-                    UpgradeAuditModel m1 = await _context.UpgradeAudits.FirstOrDefaultAsync(x => x.RSIId == model.RSIId);
+                    UpgradeAuditModel m1 = await _legacyContext.UpgradeAudits.FirstOrDefaultAsync(x => x.RSIId == model.RSIId);
                     if (m1 != null && m1.UpgradeAuditId > 0)
                         model.UpgradeAuditId = m1.UpgradeAuditId;
                 }
@@ -194,7 +199,7 @@ namespace Legacy.Services
 
                 if (model.UpgradeAuditId > 0)
                 {
-                    m = await _context.UpgradeAudits.FirstOrDefaultAsync(x => x.RSIId == model.RSIId);
+                    m = await _legacyContext.UpgradeAudits.FirstOrDefaultAsync(x => x.RSIId == model.RSIId);
                     if (m != null)
                     {
                         model.UpgradeAuditId = m.UpgradeAuditId;
@@ -241,10 +246,10 @@ namespace Legacy.Services
                         UpgradeProgram = model.UpgradeProgram
                     };
 
-                    await _context.UpgradeAudits.AddAsync(m);
+                    await _legacyContext.UpgradeAudits.AddAsync(m);
                 }
 
-                await _context.SaveChangesAsync();
+                await _legacyContext.SaveChangesAsync();
 
                 model.Message = "Success";
             }
@@ -265,7 +270,7 @@ namespace Legacy.Services
 
             try
             {
-                var tmp = await _context.Referrals.Where(x => x.RSIId == rsiId).ToListAsync();
+                var tmp = await _legacyContext.Referrals.Where(x => x.RSIId == rsiId).ToListAsync();
 
                 foreach(var row in tmp)
                 {
@@ -304,7 +309,7 @@ namespace Legacy.Services
 
             try
             {
-                MemberModel member = await _context.Users.FirstOrDefaultAsync(x => x.MemberId == rsiId);
+                MemberModel member = await _legacyContext.Users.FirstOrDefaultAsync(x => x.MemberId == rsiId);
                 ReferralModel tmp = null;
                 Random rnd = new Random();
                 int padding = rnd.Next(100, 1000);
@@ -319,7 +324,7 @@ namespace Legacy.Services
 
                         if (row.ReferralId > 0)
                         {
-                            tmp = await _context.Referrals.FirstAsync(x => x.ReferralId == row.ReferralId);
+                            tmp = await _legacyContext.Referrals.FirstAsync(x => x.ReferralId == row.ReferralId);
 
                             if (tmp != null && tmp.ReferralId > 0)
                             {
@@ -352,20 +357,20 @@ namespace Legacy.Services
                                 Relationship = row.Relationship
                             };
 
-                            await _context.Referrals.AddAsync(tmp);
+                            await _legacyContext.Referrals.AddAsync(tmp);
                         }
 
-                        await _context.SaveChangesAsync();
+                        await _legacyContext.SaveChangesAsync();
                     }
 
-                    var deleteItems = await _context.Referrals.Where(r => r.RSIId == rsiId && r.UpdateTimeStamp != updateId).ToListAsync();
+                    var deleteItems = await _legacyContext.Referrals.Where(r => r.RSIId == rsiId && r.UpdateTimeStamp != updateId).ToListAsync();
 
                     foreach (var rowDelete in deleteItems)
                     {
-                        _context.Referrals.Remove(rowDelete);
+                        _legacyContext.Referrals.Remove(rowDelete);
                     }
 
-                    await _context.SaveChangesAsync();
+                    await _legacyContext.SaveChangesAsync();
 
                     returnObj = (true, "Success");
                 }
@@ -385,7 +390,7 @@ namespace Legacy.Services
             (bool isSuccess, string message) returnObj = (false, "");
             try
             {
-                MemberModel member = await _context.Users.FirstOrDefaultAsync(x => x.MemberId == rsiId);
+                MemberModel member = await _legacyContext.Users.FirstOrDefaultAsync(x => x.MemberId == rsiId);
 
                 if (member != null && member.MemberId > 0)
                 {
@@ -407,39 +412,294 @@ namespace Legacy.Services
         {
             try
             {
-                MemberModel member = await _context.Users.FirstOrDefaultAsync(x => x.MemberId == rsiId);
+                var jobData = _hfContext.NewRSIJobData(model);
 
-                if(member != null && member.MemberId > 0)
-                {
-                    member.fname = model.PrimaryMember.FirstName;
-                    member.MiddleInitial = model.PrimaryMember.MiddleName;
-                    member.lname = model.PrimaryMember.LastName;
-                    member.Address = model.PrimaryMember.Address1;
-                    member.Address2 = model.PrimaryMember.Address2;
-                    member.City = model.PrimaryMember.City;
-                    member.StateCode = model.PrimaryMember.State;
-                    member.PostalCode = model.PrimaryMember.PostalCode;
-                    member.CountryCode = model.PrimaryMember.Country;
-                    member.phone1 = model.PrimaryMember.HomePhone;
-                    member.phone2 = model.PrimaryMember.MobilePhone;
-                    member.email = model.PrimaryMember.Email;
+                BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInLegacyRSIDb(jobData.jobId, rsiId));
+                BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInRSIDb(jobData.jobId, rsiId));
 
-                    model.Message = "Success";
-                }
-                else
-                {
-                    model.Message = $"Error: ({rsiId}) is not found";
-                }
+                return new MemberInfoViewModel() { Message = "Success" };
             }
             catch (Exception ex)
             {
-                if (model == null)
-                    model = new MemberInfoViewModel();
-
-                model.Message = $"Error: {ex.Message}";
+                return new MemberInfoViewModel() { Message = $"Error: {ex.Message}" };
             }
+        }
 
-            return model;
+        public void UpdateMemberInLegacyRSIDb(int jobId, int rsiId)
+        {
+            var model = _hfContext.GetModelForJobId<MemberInfoViewModel>(jobId);
+            MemberModel member = _legacyContext.Users.FirstOrDefault(x => x.MemberId == rsiId);
+
+            if (member != null && member.MemberId > 0)
+            {
+                //org/package info
+                member.org = model.OrganizationInfo.OrganizationId;
+                member.PackageId = model.PackageInfo.PackageId;
+
+                //primary info
+                member.fname = model.PrimaryMember.FirstName;
+                member.MiddleInitial = model.PrimaryMember.MiddleName;
+                member.lname = model.PrimaryMember.LastName;
+                member.BirthDate = model.PrimaryMember.DateOfBirth;
+
+                member.Address = model.PrimaryMember.Address1;
+                member.Address2 = model.PrimaryMember.Address2;
+                member.City = model.PrimaryMember.City;
+                member.StateCode = model.PrimaryMember.State;
+                member.PostalCode = model.PrimaryMember.PostalCode;
+                member.CountryCode = model.PrimaryMember.Country;
+
+                member.phone1 = model.PrimaryMember.HomePhone;
+                member.phone2 = model.PrimaryMember.MobilePhone;
+                member.email = model.PrimaryMember.Email;
+
+                //secondary info
+                member.FirstName2 = model.SecondaryMember.FirstName;
+                member.MiddleInitial2 = model.SecondaryMember.MiddleName;
+                member.LastName2 = model.SecondaryMember.LastName;
+                member.BirthDate2 = model.SecondaryMember.DateOfBirth;
+
+                member.email2 = model.SecondaryMember.Email;
+
+                #region Unmapped MemberModel fields
+                //member.MemberId = model. ;
+                //member.UserName = model. ;
+                //member.Password = model. ;
+                //member.Language = model. ;
+                //member.Admin = model. ;
+                //member.UserLevel = model. ;
+                //member.Guest = model. ;
+                //member.Prompts = model. ;
+                //member.CreationDate = model. ;
+                //member.CreatorId = model. ;
+                //member.LastLogin = model. ;
+                //member.LoginIp = model. ;
+                //member.Extension1 = model. ;
+                //member.Extension2 = model. ;
+                //member.IsActive = model. ;
+                //member.Comments = model. ;
+                //member.AddRep = model. ;
+                //member.AddProvider = model. ;
+                //member.Rep = model. ;
+                //member.Provider = model. ;
+                //member.RenewalDate = model. ;
+                //member.ActivationDate = model. ;
+                //member.DR = model. ;
+                //member.HotelRewards = model. ;
+                //member.SentToDR = model. ;
+                //member.DateSentToDR = model. ;
+                //member.Company = model. ;
+                //member.MemberStatus = model. ;
+                //member.Currency = model. ;
+                //member.Partner = model. ;
+                //member.AmountPaid = model. ;
+                //member.ViewOnly = model. ;
+                //member.MultipleOrgs = model. ;
+                //member.OrganizationNames = model. ;
+                //member.SiteBlockReason = model. ;
+                //member.ReturnedToDR = model. ;
+                //member.DateReturnedToDR = model. ;
+                //member.BulkNumber = model. ;
+                //member.IsTemplate = model. ;
+                //member.Reject = model. ;
+                //member.RejectReason = model. ;
+                //member.CheckInfo = model. ;
+                //member.TemplateAddDate = model. ;
+                //member.Family = model. ;
+                //member.CruiseRewards = model. ;
+                //member.CondoRewards = model. ;
+                //member.OrganizationCompany = model. ;
+                //member.PrimaryMember = model. ;
+                //member.ResortLookup = model. ;
+                //member.unitcost = model. ;
+                //member.ApprovalCode = model. ;
+                //member.MiniVacPackage = model. ;
+                //member.MiniVacUpgrades = model. ;
+                //member.MiniVacs = model. ;
+                //member.SalesDate = model. ;
+                //member.InternalTracking = model. ;
+                //member.ProviderAdd = model. ;
+                //member.ProviderEdit = model. ;
+                //member.ProviderNumbers = model. ;
+                //member.OrigionalHotelRewards = model. ;
+                //member.OrigionalCondoRewards = model. ;
+                //member.OrigionalCruiseRewards = model. ;
+                //member.Tickets = model. ;
+                //member.BlockedReason = model. ;
+                //member.Fax1 = model. ;
+                //member.FaxExtension1 = model. ;
+                //member.Fax2 = model. ;
+                //member.FaxExtension2 = model. ;
+                //member.SignupIP = model. ;
+                //member.FirstLogin = model. ;
+                //member.ReferralId = model. ;
+                //member.RenewalMessageDate = model. ;
+                //member.RenewalSoftConfirm = model. ;
+                //member.RenewalError = model. ;
+                //member.RenewalSoftConfirmDate = model. ;
+                //member.FinancingOption = model. ;
+                //member.OptOut = model. ;
+                //member.NDR = model. ;
+                //member.RenewalLength = model. ;
+                //member.RenewalTeamKeyId = model. ;
+                //member.RenewalPriceEdit = model. ;
+                //member.RenewalSkipBilling = model. ;
+                //member.Military = model. ;
+                //member.Military2 = model. ;
+                //member.Phone3 = model. ;
+                //member.TransferOffered = model. ;
+                //member.TransferOfferedId = model. ;
+                //member.TransferOfferedDate = model. ;
+                //member.InactiveDate = model. ;
+                //member.PasswordQuestion = model. ;
+                //member.PasswordAnswer = model. ;
+                //member.ContactContactId = model. ;
+                //member.ContactSubscriptionId = model. ;
+                //member.ContactSendId = model. ;
+                //member.MailMonkeyUploadDate = model. ;
+                //member.ExpiryDate = model. ;
+                //member.MailMonkeyCode = model. ;
+                //member.MailMonkeyMessage = model. ;
+                //member.DRUserId = model. ;
+                //member.OutsideRenewalUserId = model. ;
+                //member.MembershipLengthInDays = model. ;
+                //member.MembershipRenewalAmount = model. ;
+                //member.IsCompedAccount = model. ;
+                //member.SoapCreatorReference = model. ;
+                //member.SoapCreationLocation = model. ;
+                //member.ExpiryOverrideDate = model. ;
+                //member.KLLId = model. ;
+                //member.DeleteMe = model. ;
+                //member.KeepMe = model. ;
+                #endregion Unmapped MemberModel fields
+
+                _legacyContext.SaveChanges();
+            }
+            else
+            {
+                throw new Exception($"Error: ({rsiId}) is not found");
+            }
+        }
+        public void UpdateMemberInRSIDb(int jobId, int rsiId)
+        {
+            var model = _hfContext.GetModelForJobId<MemberInfoViewModel>(jobId);
+
+            #region MemberUpdateVIP
+            var result = _rsiContext.LoadStoredProc("dbo.MemberUpdateVIP")
+            .WithSqlParam("RSIId", rsiId)
+            .WithSqlParam("RSIOrganizationId", model.OrganizationInfo.OrganizationId)
+            .WithSqlParam("DistributorId", null)
+            .WithSqlParam("PackageId", model.PackageInfo.PackageId)
+            .WithSqlParam("AffiliateId", null)
+            .WithSqlParam("RSICreatorId", null)
+            .WithSqlParam("ClubReference", null)
+            .WithSqlParam("CreatorIP", null)
+            .WithSqlParam("Username", null)
+            .WithSqlParam("Password", null)
+            .WithSqlParam("FirstName", model.PrimaryMember.FirstName)
+            .WithSqlParam("MiddleName", model.PrimaryMember.MiddleName)
+            .WithSqlParam("LastName", model.PrimaryMember.LastName)
+            .WithSqlParam("FirstName2", model.SecondaryMember.FirstName)
+            .WithSqlParam("MiddleName2", model.SecondaryMember.MiddleName)
+            .WithSqlParam("LastName2", model.SecondaryMember.LastName)
+            .WithSqlParam("Family", null)
+            .WithSqlParam("Phone1", model.PrimaryMember.HomePhone)
+            .WithSqlParam("Phone2", model.SecondaryMember.HomePhone)
+            .WithSqlParam("Email1", model.PrimaryMember.Email)
+            .WithSqlParam("Email2", model.SecondaryMember.Email)
+            .WithSqlParam("Address1", model.PrimaryMember.Address1)
+            .WithSqlParam("Address2", model.SecondaryMember.Address1)
+            .WithSqlParam("City", model.PrimaryMember.City)
+            .WithSqlParam("StateCode", model.PrimaryMember.State)
+            .WithSqlParam("PostalCode", model.PrimaryMember.PostalCode)
+            .WithSqlParam("CountryCode", model.PrimaryMember.Country)
+            .WithSqlParam("CondoRewards", null)
+            .WithSqlParam("CruiseRewards", null)
+            .WithSqlParam("HotelRewards", null)
+            .WithSqlParam("SalesAmount", null)
+            .WithSqlParam("Note", null)
+            .WithSqlParam("BlockedReason", null)
+            .WithSqlParam("SalesDate", null)
+            .WithSqlParam("DateOfBirth", model.PrimaryMember.DateOfBirth)
+            .WithSqlParam("BlockedDate", null)
+            .WithSqlParam("ExpirationDate", null)
+            .WithSqlParam("IsEmailOptOut", null)
+            .WithSqlParam("IsActive", null)
+            .WithSqlParam("IsGuest", null)
+            .WithSqlParam("IsComped", null)
+            .ExecuteStoredProcAsync<int>();
+            #endregion MemberUpdateVIP
+
+            #region MemberUpdateCRM
+            result = _rsiContext.LoadStoredProc("dbo.MemberUpdateCRM")
+            .WithSqlParam("RSIModifierId", rsiId)
+            .WithSqlParam("RSIOrganizationId", model.OrganizationInfo.OrganizationId)
+            .WithSqlParam("PackageId", model.PackageInfo.PackageId)
+            .WithSqlParam("CreatorIP", null)
+            .WithSqlParam("Username", null)
+            .WithSqlParam("Password", null)
+            .WithSqlParam("Title", null)
+            .WithSqlParam("FirstName", model.PrimaryMember.FirstName)
+            .WithSqlParam("MiddleName", model.PrimaryMember.MiddleName)
+            .WithSqlParam("LastName", model.PrimaryMember.LastName)
+            .WithSqlParam("FirstName2", model.SecondaryMember.FirstName)
+            .WithSqlParam("MiddleName2", model.SecondaryMember.MiddleName)
+            .WithSqlParam("LastName2", model.SecondaryMember.LastName)
+            .WithSqlParam("Family", null)
+            .WithSqlParam("Address1", model.PrimaryMember.Address1)
+            .WithSqlParam("Address2", model.SecondaryMember.Address1)
+            .WithSqlParam("City", model.PrimaryMember.City)
+            .WithSqlParam("StateCode", model.PrimaryMember.State)
+            .WithSqlParam("PostalCode", model.PrimaryMember.PostalCode)
+            .WithSqlParam("CountryCode", model.PrimaryMember.Country)
+            .WithSqlParam("Phone1", model.PrimaryMember.HomePhone)
+            .WithSqlParam("Phone2", model.SecondaryMember.HomePhone)
+            .WithSqlParam("Email1", model.PrimaryMember.Email)
+            .WithSqlParam("BlockedReason", null)
+            .WithSqlParam("CondoRewards", null)
+            .WithSqlParam("CruiseRewards", null)
+            .WithSqlParam("HotelRewards", null)
+            .WithSqlParam("UnlimitedRewards", null)
+            .WithSqlParam("SalesDate", null)
+            .WithSqlParam("BlockedDate", null)
+            .WithSqlParam("DateOfBirth", null)
+            .WithSqlParam("ExpirationDate", null)
+            .WithSqlParam("IsActive", null)
+            .WithSqlParam("IsMilitary", null)
+            .ExecuteStoredProcAsync<int>();
+            #endregion MemberUpdateCRM
+
+            #region MemberUpdateCB
+            result = _rsiContext.LoadStoredProc("dbo.MemberUpdateCB")
+            .WithSqlParam("RSIId", rsiId)
+            .WithSqlParam("RSIOrganizationId", model.OrganizationInfo.OrganizationId)
+            .WithSqlParam("OrganizationName", model.OrganizationInfo.OrganizationName)
+            .WithSqlParam("FirstName", model.PrimaryMember.FirstName)
+            .WithSqlParam("MiddleName", model.PrimaryMember.MiddleName)
+            .WithSqlParam("LastName", model.PrimaryMember.LastName)
+            .WithSqlParam("FirstName2", model.SecondaryMember.FirstName)
+            .WithSqlParam("MiddleName2", model.SecondaryMember.MiddleName)
+            .WithSqlParam("LastName2", model.SecondaryMember.LastName)
+            .WithSqlParam("Address1", model.PrimaryMember.Address1)
+            .WithSqlParam("Address2", model.SecondaryMember.Address1)
+            .WithSqlParam("City", model.PrimaryMember.City)
+            .WithSqlParam("StateCode", model.PrimaryMember.State)
+            .WithSqlParam("PostalCode", model.PrimaryMember.PostalCode)
+            .WithSqlParam("CountryCode", model.PrimaryMember.Country)
+            .WithSqlParam("NOTES", null)
+            .WithSqlParam("IsActive", null)
+            .WithSqlParam("Phone1", model.PrimaryMember.HomePhone)
+            .WithSqlParam("Phone2", model.SecondaryMember.HomePhone)
+            .WithSqlParam("Email1", model.PrimaryMember.Email)
+            .WithSqlParam("Email2", model.SecondaryMember.Email)
+            .WithSqlParam("Username", null)
+            .WithSqlParam("Password", null)
+            .WithSqlParam("BirthDate1", model.PrimaryMember.DateOfBirth)
+            .WithSqlParam("BirthDate2", model.SecondaryMember.DateOfBirth)
+            .WithSqlParam("ExpirationDate", null)
+            .WithSqlParam("PROFILEID", null)
+            .ExecuteStoredProcAsync<int>();
+            #endregion MemberUpdateCB
         }
 
         public async Task<(bool isSuccess, string message, List<TravelDetailViewModel> travels)> GetTravelInfoAsync(int rsiId)
@@ -506,9 +766,9 @@ namespace Legacy.Services
 
             try
             {
-                var tmp = await (from u in _context.Users
-                           join o in _context.Organizations on u.org equals o.OrganizationId
-                           join r in _context.RenewalInfo on u.MemberId equals r.RSIId into gj
+                var tmp = await (from u in _legacyContext.Users
+                           join o in _legacyContext.Organizations on u.org equals o.OrganizationId
+                           join r in _legacyContext.RenewalInfo on u.MemberId equals r.RSIId into gj
                            from subr in gj.DefaultIfEmpty()
                            where u.MemberId == rsiId
                            select new
@@ -755,8 +1015,8 @@ namespace Legacy.Services
 
             try
             {
-                var qry = from u in _context.Users
-                          join o in _context.Organizations on u.org equals o.OrganizationId
+                var qry = from u in _legacyContext.Users
+                          join o in _legacyContext.Organizations on u.org equals o.OrganizationId
                           select new 
                           {
                               u.email,
