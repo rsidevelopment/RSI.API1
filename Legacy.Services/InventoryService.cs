@@ -1,7 +1,9 @@
 ﻿using Legacy.Services.Data;
 using Legacy.Services.Interfaces;
+using Legacy.Services.Models;
 using Legacy.Services.Models._ViewModels;
 using Legacy.Services.Models._ViewModels.Inventory;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -65,7 +67,8 @@ namespace Legacy.Services
                     Quantity = i.quantity,
                     BedroomSize = ((BedroomSize)Enum.Parse(typeof(BedroomSize), i.unitSize)).ToString().SplitCamelCase(),
                     UnitId = i.unitID,
-                    MaxRows = i.maxrows
+                    MaxRows = i.maxrows//,
+                    //OwnerId = i.owner
                 }).ToList();
 
                 model.TotalCount = (model.RowCount > 0) ? model.Rows[0].MaxRows : 0;
@@ -73,6 +76,90 @@ namespace Legacy.Services
             }
             catch (Exception ex)
             {
+                model.Message = $"Error: {ex.Message}";
+            }
+
+            return model;
+        }
+
+        public async Task<InventoryItemViewModel> GetInventoryById(int inventoryId)
+        {
+            InventoryItemViewModel model = new InventoryItemViewModel();
+
+            try
+            {
+                model = await (from i in _context.Inventories
+                               where i.keyid == inventoryId
+                               select new InventoryItemViewModel
+                               {
+                                   BedroomSize = i.bedrooms.ToString(),
+                                   CheckInDate = i.fdate,
+                                   CheckOutDate = i.tdate,
+                                   InventoryId = i.keyid,
+                                   InventoryType = i.inventorytype.Trim(),
+                                   KitchenType = i.kitchentype.Trim(),
+                                   MaxGuests = i.maxguests,
+                                   Privacy = i.adults,
+                                   ProviderInventoryId = i.inventoryid.Trim(),
+                                   Quantity = i.quantity - i.hold,
+                                   UnitId = i.unitkeyid,
+                                   NetRate = decimal.Parse(i.rsicost)
+                               }).FirstOrDefaultAsync();
+                if (model != null)
+                {
+                    model.Message = "Success";
+                }
+                else
+                    model.Message = "Error: Inventory not found";
+            }
+            catch (Exception ex)
+            {
+                if (model == null)
+                    model = new InventoryItemViewModel();
+
+                model.Message = $"Error: {ex.Message}";
+            }
+
+            return model;
+        }
+
+        public async Task<InventoryItemViewModel> GetInventoryByProviderInventoryId(int providerId, string inventoryId)
+        {
+            InventoryItemViewModel model = new InventoryItemViewModel();
+
+            try
+            {
+                model = await (from i in _context.Inventories
+                              where i.inventoryid == inventoryId && i.ownerid == providerId
+                              select new InventoryItemViewModel
+                              {
+                                  BedroomSize = i.bedrooms.ToString(),
+                                  CheckInDate = i.fdate,
+                                  CheckOutDate = i.tdate,
+                                  InventoryId = i.keyid,
+                                  InventoryType = i.inventorytype.Trim(),
+                                  KitchenType = i.kitchentype.Trim(),
+                                  MaxGuests = i.maxguests,
+                                  Privacy = i.adults,
+                                  ProviderInventoryId = i.inventoryid,
+                                  Quantity = i.quantity - i.hold,
+                                  UnitId = i.unitkeyid,
+                                  NetRate = decimal.Parse(i.rsicost)
+                              }).FirstOrDefaultAsync();
+                if (model != null)
+                {
+                    model.Message = "Success";
+                }
+                else
+                    model.Message = "Error: Inventory not found";
+
+                model.Message = "Success";
+            }
+            catch (Exception ex)
+            {
+                if (model == null)
+                    model = new InventoryItemViewModel();
+
                 model.Message = $"Error: {ex.Message}";
             }
 

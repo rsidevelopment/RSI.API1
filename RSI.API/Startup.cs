@@ -42,6 +42,7 @@ namespace RSI.API
             services.AddTransient<IUnitService, UnitService>();
             services.AddTransient<IInventoryService, InventoryService>();
             services.AddTransient<IBookingService, BookingService>();
+            services.AddTransient<IRCIService, RCIService>();
 
             services.AddMvcCore()
                 .AddAuthorization()
@@ -52,7 +53,7 @@ namespace RSI.API
                 .AddIdentityServerAuthentication(options =>
                 {
                     options.LegacyAudienceValidation = true;
-                    //options.Authority = "https://authorize.accessrsi.com";
+                    options.Authority = "https://authorize.accessrsi.com";
                     //options.Authority = "http://localhost:60195";
                     options.RequireHttpsMetadata = false;
                     options.ApiName = "api1";
