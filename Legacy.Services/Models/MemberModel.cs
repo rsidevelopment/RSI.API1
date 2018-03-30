@@ -253,11 +253,11 @@ namespace Legacy.Services.Models
         public bool? RenewalPriceEdit { get; set; }
         [Column("bRenewalSkipBilling")]
         public bool? RenewalSkipBilling { get; set; }
-        [Column("dtBirthDate")]
+        [Column("dtBirthDate", TypeName = "datetime")]
         public DateTime? BirthDate { get; set; }
         [Column("bMilitary")]
         public bool? Military { get; set; }
-        [Column("dtBirthDate2")]
+        [Column("dtBirthDate2", TypeName = "datetime")]
         public DateTime? BirthDate2 { get; set; }
         [Column("bMilitary2")]
         public bool? Military2 { get; set; }

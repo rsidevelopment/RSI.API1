@@ -7,6 +7,7 @@ namespace Legacy.Services.Interfaces
     public interface IInventoryService
     {
         Task<_ListViewModel<InventoryListViewModel>> GetInventory(InventorySearchViewModel inventorySearchViewModel);
+        Task<BookingResponseViewModel> BookInventory(BookingRequestViewModel bookingRequestViewModel);
         Task<InventoryItemViewModel> GetInventoryById(int inventoryId);
         Task<InventoryItemViewModel> GetInventoryByProviderInventoryId(int providerId, string inventoryId);
     }

@@ -61,5 +61,18 @@ namespace RSI.API.Controllers
 
             return model;
         }
+
+        // POST: api/inventory/123/book
+        [HttpPost("{inventoryId}/book")]
+        public async Task<BookingResponseViewModel> Get(int inventoryId)
+        {
+            var bookingInfo = new BookingRequestViewModel()
+            {
+                InventoryId = inventoryId
+            };
+
+            return await _context.BookInventory(bookingInfo);
+        }
+
     }
 }

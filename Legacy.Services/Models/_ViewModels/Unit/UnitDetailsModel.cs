@@ -7,6 +7,16 @@ namespace Legacy.Services.Models._ViewModels.Unit
     {
         [JsonProperty(PropertyName = "unit_id")]
         public int UnitId { get; set; }
+        string _originalUnitId;
+        [JsonProperty(PropertyName = "original_unit_id")]
+        public string OriginalUnitId {
+            get {
+                return _originalUnitId ?? string.Empty;
+            }
+            set {
+                _originalUnitId = value;
+            }
+        }
         [JsonProperty(PropertyName = "owner_id")]
         public int? OwnerId { get; set; }
         [JsonProperty(PropertyName = "unit_name")]
@@ -21,5 +31,7 @@ namespace Legacy.Services.Models._ViewModels.Unit
         public AddressViewModel Address { get; set; }
         [JsonProperty(PropertyName = "amenities")]
         public List<Amenity> Amenities { get; set; }
+        [JsonProperty(PropertyName = "additional_image_urls")]
+        public List<string> AdditionalImageURLs { get; set; }
     }
 }

@@ -1,22 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using IdentityServer4.AccessTokenValidation;
+﻿using Hangfire;
+using Legacy.Services;
+using Legacy.Services.Data;
+using Legacy.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Identity;
-using Legacy.Services.Data;
-using Microsoft.EntityFrameworkCore;
-using Legacy.Services.Interfaces;
-using Legacy.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc.Authorization;
 using Swashbuckle.AspNetCore.Swagger;
+using System;
 
 namespace RSI.API
 {
@@ -32,9 +24,15 @@ namespace RSI.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDbContext<HangFireDbContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("HangFireConnection"), o => o.UseRowNumberForPaging()));
             services.AddDbContext<LegacyDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("LegacyConnection"), o=> o.UseRowNumberForPaging()));
-            
+            services.AddDbContext<RSIDbContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"), o => o.UseRowNumberForPaging()));
+
+            services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("HangFireConnection")));
+
             services.AddTransient<IMemberService, MemberServices>();
             services.AddTransient<IOrganizationService, OrganizationService>();
             services.AddTransient<IPackageService, PackageService>();
@@ -69,18 +67,18 @@ namespace RSI.API
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider serviceProvider)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
             app.UseAuthentication();
-                /*.AddIdentityServerAuthentication(options =>
-                {
-                    options.Authority = "https://authorize.accessrsi.com";
-                    options.ApiName = "api1";
-                });*/
+            /*.AddIdentityServerAuthentication(options =>
+            {
+                options.Authority = "https://authorize.accessrsi.com";
+                options.ApiName = "api1";
+            });*/
             /*app.UseIdentityServerAuthentication(new IdentityServerAuthenticationOptions
             {
                 Authority = "https://authorize.accessrsi.com",
@@ -91,6 +89,13 @@ namespace RSI.API
 
                 RequireHttpsMetadata = false
             });*/
+
+            GlobalConfiguration.Configuration
+                .UseActivator(new HangfireActivator(serviceProvider));
+
+            app.UseHangfireServer();
+            app.UseHangfireDashboard();
+
             app.UseMvc();
             app.UseSwagger();
             app.UseSwaggerUI(c =>
