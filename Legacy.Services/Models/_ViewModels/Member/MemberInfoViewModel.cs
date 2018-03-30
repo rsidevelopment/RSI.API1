@@ -22,6 +22,7 @@ namespace Legacy.Services.Models._ViewModels.Member
         public MembershipInfoViewModel MembershipInfo { get; set; } = new MembershipInfoViewModel();
         [JsonProperty(PropertyName = "family_members")]
         public List<FamilyMemberViewModel> FamilyMembers { get; set; } = new List<FamilyMemberViewModel>();
+        [JsonIgnore]
         public string FamilyMemberString
         {
             get
@@ -94,6 +95,7 @@ namespace Legacy.Services.Models._ViewModels.Member
         public string FirstName { get; set; } = "";
         [JsonProperty(PropertyName = "middle_name"), StringLength(100)]
         public string MiddleName { get; set; } = "";
+        [JsonIgnore]
         public string MiddleInitial
         {
             get
