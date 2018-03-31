@@ -414,9 +414,8 @@ namespace Legacy.Services
             {
                 var jobData = _hfContext.NewRSIJobData(model);
 
-                UpdateMemberInLegacyRSIDb(jobData.jobId, rsiId);
-                //BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInLegacyRSIDb(jobData.jobId, rsiId));
-                //BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInRSIDb(jobData.jobId, rsiId));
+                BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInLegacyRSIDb(jobData.jobId, rsiId));
+                BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInRSIDb(jobData.jobId, rsiId));
 
                 return new MemberInfoViewModel() { Message = "Success" };
             }
