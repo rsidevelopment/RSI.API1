@@ -753,18 +753,18 @@ namespace Legacy.Services
             .WithSqlParam("StateCode", model.PrimaryMember.State)
             .WithSqlParam("PostalCode", model.PrimaryMember.PostalCode)
             .WithSqlParam("CountryCode", model.PrimaryMember.Country)
-            .WithSqlParam("NOTES", string.Empty)
+            .WithSqlParam("NOTES", null)
             .WithSqlParam("IsActive", true)
             .WithSqlParam("Phone1", model.PrimaryMember.HomePhone)
             .WithSqlParam("Phone2", model.SecondaryMember.HomePhone)
             .WithSqlParam("Email1", model.PrimaryMember.Email)
             .WithSqlParam("Email2", model.SecondaryMember.Email)
-            .WithSqlParam("Username", string.Empty)
-            .WithSqlParam("Password", string.Empty)
+            .WithSqlParam("Username", null)
+            .WithSqlParam("Password", null)
             .WithSqlParam("BirthDate1", model.PrimaryMember.DateOfBirth)
             .WithSqlParam("BirthDate2", model.SecondaryMember.DateOfBirth)
-            .WithSqlParam("ExpirationDate", SqlDateTime.MinValue)
-            .WithSqlParam("PROFILEID", null, ParameterDirection.Output)
+            .WithSqlParam("ExpirationDate", null)
+            .WithSqlParam("PROFILEID", 0, ParameterDirection.Output)
             .ExecuteStoredProcAsync<int>().Result;
             #endregion MemberUpdateCB
         }
