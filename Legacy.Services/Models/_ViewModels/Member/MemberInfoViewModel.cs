@@ -22,6 +22,22 @@ namespace Legacy.Services.Models._ViewModels.Member
         public MembershipInfoViewModel MembershipInfo { get; set; } = new MembershipInfoViewModel();
         [JsonProperty(PropertyName = "family_members")]
         public List<FamilyMemberViewModel> FamilyMembers { get; set; } = new List<FamilyMemberViewModel>();
+        [JsonIgnore]
+        public string FamilyMemberString
+        {
+            get
+            {
+                string fms = string.Empty;
+                for (int i = 0; i < FamilyMembers.Count; i++)
+                {
+                    var p = FamilyMembers[i];
+                    if (i > 0) fms += ",";
+                    fms += $"{p.FistName} {p.LastName}";
+                }
+
+                return fms;
+            }
+        }
         [JsonProperty(PropertyName = "travel_info")]
         public List<TravelDetailViewModel> TravelInfo { get; set; } = new List<TravelDetailViewModel>();
         
@@ -79,6 +95,14 @@ namespace Legacy.Services.Models._ViewModels.Member
         public string FirstName { get; set; } = "";
         [JsonProperty(PropertyName = "middle_name"), StringLength(100)]
         public string MiddleName { get; set; } = "";
+        [JsonIgnore]
+        public string MiddleInitial
+        {
+            get
+            {
+                return (string.IsNullOrEmpty(MiddleName)) ? null : MiddleName.Substring(0,1);
+            }
+        }
         [JsonProperty(PropertyName = "last_name"), StringLength(255), Required]
         public string LastName { get; set; } = "";
         [JsonProperty(PropertyName = "address_1"), Required, StringLength(255)]
@@ -134,7 +158,9 @@ namespace Legacy.Services.Models._ViewModels.Member
     public class PackageInfoViewModel
     {
         [JsonProperty(PropertyName = "package_id")]
-        public int PackageId { get; set; } 
+        public int PackageId { get; set; }
+        [JsonProperty(PropertyName = "points")]
+        public float Points { get; set; }
         [JsonProperty(PropertyName = "package_name")]
         public string PackageName { get; set; }
         [JsonProperty(PropertyName = "benefits")]
