@@ -92,7 +92,7 @@ namespace Legacy.Services
             {
                 if (bookingRequestViewModel.InventoryId > 0)
                 {
-                    UnitDetailsModel unit = await _unitService.GetUnitByInventoryId(bookingRequestViewModel.InventoryId);
+                    var unit = await _unitService.GetUnitByInventoryId(bookingRequestViewModel.InventoryId);
                     model.Message = unit.Message;
                 }
                 else
