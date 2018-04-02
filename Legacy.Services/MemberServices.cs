@@ -405,7 +405,9 @@ namespace Legacy.Services
             .WithSqlParam("Email", familyMember.Email)
             .WithSqlParam("PrimaryPhone", familyMember.PrimaryPhone)
             .WithSqlParam("SecondaryPhone", familyMember.AlternativePhone)
-            .ExecuteStoredProcAsync<int>().Result;
+            .ExecuteStoredProcAsync<int>().Result.FirstOrDefault();
+
+            if (result == 0) throw new Exception($"AddUpdateCRMAuthorizedUsers failed for RSIId: {rsiId} Family Member Id: {familyMember.FamilyMemberId}");
         }
         void AddUpdateCRMAuthorizedUsers(long rsiId, PersonViewModel secondary)
         {
@@ -424,7 +426,9 @@ namespace Legacy.Services
             .WithSqlParam("State", secondary.State)
             .WithSqlParam("PostalCode", secondary.PostalCode)
             .WithSqlParam("Country", secondary.Country)
-            .ExecuteStoredProcAsync<int>();
+            .ExecuteStoredProcAsync<int>().Result.FirstOrDefault();
+
+            if (result == 0) throw new Exception($"AddUpdateCRMAuthorizedUsers failed for RSIId: {rsiId} Secondary Member Id: {secondary.RSIId}");
         }
         public async Task<(bool isSuccess, string message)> AddUpdateFamilyAsync(int rsiId, List<FamilyMemberViewModel> family)
         {
@@ -433,12 +437,8 @@ namespace Legacy.Services
             {
                 MemberModel member = await _legacyContext.Users.FirstOrDefaultAsync(x => x.MemberId == rsiId);
 
-                if (member != null && member.MemberId > 0)
-                {
-                    returnObj = (true, "Success");
-                }
-                else
-                    returnObj = (false, $"Error: ({rsiId}) is not found");
+                if (member == null || member.MemberId == 0)
+                    return (false, $"Error: ({rsiId}) is not found");
 
                 var previousFamily = await GetFamilyAsync(rsiId);
                 foreach (var fm in previousFamily.family)
