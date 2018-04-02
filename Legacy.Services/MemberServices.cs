@@ -11,9 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace Legacy.Services
 {
@@ -385,19 +385,25 @@ namespace Legacy.Services
             return returnObj;
         }
 
+        class IdResponse
+        {
+            public long Id { get; set; }
+        }
         void DeactivateAuthorizedUser(long rsiId)
         {
             if (rsiId == 0) return;
 
             var result = _rsiContext.LoadStoredProc("dbo.DeactivateAuthorizedUser")
             .WithSqlParam("Id", rsiId)
-            .ExecuteStoredProcAsync<int>().Result;
+            .ExecuteStoredProcAsync<IdResponse>().Result.FirstOrDefault();
+
+            if (result.Id != rsiId) throw new Exception($"DeactivateAuthorizedUser failed for RSIId: {rsiId}");
         }
         void AddUpdateCRMAuthorizedUsers(long rsiId, FamilyMemberViewModel familyMember)
         {
             var result = _rsiContext.LoadStoredProc("dbo.AddUpdateCRMAuthorizedUsers")
-            .WithSqlParam("Id", rsiId)
-            .WithSqlParam("RSIId", familyMember.FamilyMemberId)
+            .WithSqlParam("Id", familyMember.FamilyMemberId)
+            .WithSqlParam("RSIId", rsiId)
             .WithSqlParam("FirstName", familyMember.FirstName)
             .WithSqlParam("LastName", familyMember.LastName)
             .WithSqlParam("BirthDate", familyMember.DateOfBirth)
@@ -405,9 +411,14 @@ namespace Legacy.Services
             .WithSqlParam("Email", familyMember.Email)
             .WithSqlParam("PrimaryPhone", familyMember.PrimaryPhone)
             .WithSqlParam("SecondaryPhone", familyMember.AlternativePhone)
-            .ExecuteStoredProcAsync<int>().Result.FirstOrDefault();
+            .WithSqlParam("Address", string.Empty)
+            .WithSqlParam("City", string.Empty)
+            .WithSqlParam("State", string.Empty)
+            .WithSqlParam("PostalCode", string.Empty)
+            .WithSqlParam("Country", string.Empty)
+            .ExecuteStoredProcAsync<IdResponse>().Result.FirstOrDefault();
 
-            if (result == 0) throw new Exception($"AddUpdateCRMAuthorizedUsers failed for RSIId: {rsiId} Family Member Id: {familyMember.FamilyMemberId}");
+            if (result.Id == 0) throw new Exception($"AddUpdateCRMAuthorizedUsers failed for RSIId: {rsiId} Family Member Id: {familyMember.FamilyMemberId}");
         }
         void AddUpdateCRMAuthorizedUsers(long rsiId, PersonViewModel secondary)
         {
@@ -426,13 +437,13 @@ namespace Legacy.Services
             .WithSqlParam("State", secondary.State)
             .WithSqlParam("PostalCode", secondary.PostalCode)
             .WithSqlParam("Country", secondary.Country)
-            .ExecuteStoredProcAsync<int>().Result.FirstOrDefault();
+            .ExecuteStoredProcAsync<IdResponse>().Result.FirstOrDefault();
 
-            if (result == 0) throw new Exception($"AddUpdateCRMAuthorizedUsers failed for RSIId: {rsiId} Secondary Member Id: {secondary.RSIId}");
+            if (result.Id == 0) throw new Exception($"AddUpdateCRMAuthorizedUsers failed for RSIId: {rsiId} Secondary Member Id: {secondary.RSIId}");
         }
         public async Task<(bool isSuccess, string message)> AddUpdateFamilyAsync(int rsiId, List<FamilyMemberViewModel> family)
         {
-            (bool isSuccess, string message) returnObj = (false, "");
+            (bool isSuccess, string message) returnObj = (true, "");
             try
             {
                 MemberModel member = await _legacyContext.Users.FirstOrDefaultAsync(x => x.MemberId == rsiId);
@@ -466,10 +477,11 @@ namespace Legacy.Services
             {
                 var jobData = _hfContext.NewRSIJobData(model);
 
+                //UpdateMemberInRSIDb(jobData.jobId, rsiId);
+                //UpdateFamilyInRSIDb(jobData.jobId, rsiId);
                 BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInLegacyRSIDb(jobData.jobId, rsiId));
                 BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInRSIDb(jobData.jobId, rsiId));
                 BackgroundJob.Enqueue<MemberServices>(x => x.UpdateFamilyInRSIDb(jobData.jobId, rsiId));
-                //UpdateFamilyInRSIDb(jobData.jobId, rsiId);
 
                 return new MemberInfoViewModel() { Message = "Success" };
             }
@@ -660,7 +672,7 @@ namespace Legacy.Services
             .WithSqlParam("Phone1", model.PrimaryMember.HomePhone)
             .WithSqlParam("Phone2", model.PrimaryMember.MobilePhone)
             .WithSqlParam("Email1", model.PrimaryMember.Email)
-            .WithSqlParam("Email2", null)
+            .WithSqlParam("Email2", model.SecondaryMember.Email)
             .WithSqlParam("Address1", model.PrimaryMember.Address1)
             .WithSqlParam("Address2", model.PrimaryMember.Address2)
             .WithSqlParam("City", model.PrimaryMember.City)
@@ -670,7 +682,7 @@ namespace Legacy.Services
             .WithSqlParam("CondoRewards", 0)
             .WithSqlParam("CruiseRewards", 0)
             .WithSqlParam("HotelRewards", model.PackageInfo.Points.ToString())
-            .WithSqlParam("SalesAmount", null)
+            .WithSqlParam("SalesAmount", 0)
             .WithSqlParam("Note", null)
             .WithSqlParam("BlockedReason", null)
             .WithSqlParam("SalesDate", null)
@@ -686,7 +698,8 @@ namespace Legacy.Services
 
             #region MemberUpdateCRM
             result = _rsiContext.LoadStoredProc("dbo.MemberUpdateCRM")
-            .WithSqlParam("RSIModifierId", rsiId)
+            .WithSqlParam("RSIId", rsiId)
+            .WithSqlParam("RSIModifierId", null)
             .WithSqlParam("RSIOrganizationId", model.OrganizationInfo.OrganizationId)
             .WithSqlParam("PackageId", model.PackageInfo.PackageId)
             .WithSqlParam("CreatorIP", null)
@@ -699,7 +712,7 @@ namespace Legacy.Services
             .WithSqlParam("FirstName2", model.SecondaryMember.FirstName)
             .WithSqlParam("MiddleName2", model.SecondaryMember.MiddleName)
             .WithSqlParam("LastName2", model.SecondaryMember.LastName)
-            .WithSqlParam("Family", null)
+            .WithSqlParam("Family", model.FamilyMemberString)
             .WithSqlParam("Address1", model.PrimaryMember.Address1)
             .WithSqlParam("Address2", model.SecondaryMember.Address1)
             .WithSqlParam("City", model.PrimaryMember.City)
@@ -710,13 +723,13 @@ namespace Legacy.Services
             .WithSqlParam("Phone2", model.SecondaryMember.HomePhone)
             .WithSqlParam("Email1", model.PrimaryMember.Email)
             .WithSqlParam("BlockedReason", null)
-            .WithSqlParam("CondoRewards", null)
-            .WithSqlParam("CruiseRewards", null)
-            .WithSqlParam("HotelRewards", null)
-            .WithSqlParam("UnlimitedRewards", null)
+            .WithSqlParam("CondoRewards", 0)
+            .WithSqlParam("CruiseRewards", 0)
+            .WithSqlParam("HotelRewards", model.PackageInfo.Points.ToString())
+            .WithSqlParam("UnlimitedRewards", 0)
             .WithSqlParam("SalesDate", null)
             .WithSqlParam("BlockedDate", null)
-            .WithSqlParam("DateOfBirth", null)
+            .WithSqlParam("DateOfBirth", model.PrimaryMember.DateOfBirth)
             .WithSqlParam("ExpirationDate", null)
             .WithSqlParam("IsActive", true)
             .WithSqlParam("IsMilitary", null)
@@ -740,18 +753,18 @@ namespace Legacy.Services
             .WithSqlParam("StateCode", model.PrimaryMember.State)
             .WithSqlParam("PostalCode", model.PrimaryMember.PostalCode)
             .WithSqlParam("CountryCode", model.PrimaryMember.Country)
-            .WithSqlParam("NOTES", null)
+            .WithSqlParam("NOTES", string.Empty)
             .WithSqlParam("IsActive", true)
             .WithSqlParam("Phone1", model.PrimaryMember.HomePhone)
             .WithSqlParam("Phone2", model.SecondaryMember.HomePhone)
             .WithSqlParam("Email1", model.PrimaryMember.Email)
             .WithSqlParam("Email2", model.SecondaryMember.Email)
-            .WithSqlParam("Username", null)
-            .WithSqlParam("Password", null)
+            .WithSqlParam("Username", string.Empty)
+            .WithSqlParam("Password", string.Empty)
             .WithSqlParam("BirthDate1", model.PrimaryMember.DateOfBirth)
             .WithSqlParam("BirthDate2", model.SecondaryMember.DateOfBirth)
-            .WithSqlParam("ExpirationDate", null)
-            .WithSqlParam("PROFILEID", null)
+            .WithSqlParam("ExpirationDate", SqlDateTime.MinValue)
+            .WithSqlParam("PROFILEID", null, ParameterDirection.Output)
             .ExecuteStoredProcAsync<int>().Result;
             #endregion MemberUpdateCB
         }
