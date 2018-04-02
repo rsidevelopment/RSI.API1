@@ -387,9 +387,11 @@ namespace Legacy.Services
 
         void DeactivateAuthorizedUser(long rsiId)
         {
+            if (rsiId == 0) return;
+
             var result = _rsiContext.LoadStoredProc("dbo.DeactivateAuthorizedUser")
             .WithSqlParam("Id", rsiId)
-            .ExecuteStoredProcAsync<int>();
+            .ExecuteStoredProcAsync<int>().Result;
         }
         void AddUpdateCRMAuthorizedUsers(long rsiId, FamilyMemberViewModel familyMember)
         {
@@ -403,7 +405,7 @@ namespace Legacy.Services
             .WithSqlParam("Email", familyMember.Email)
             .WithSqlParam("PrimaryPhone", familyMember.PrimaryPhone)
             .WithSqlParam("SecondaryPhone", familyMember.AlternativePhone)
-            .ExecuteStoredProcAsync<int>();
+            .ExecuteStoredProcAsync<int>().Result;
         }
         void AddUpdateCRMAuthorizedUsers(long rsiId, PersonViewModel secondary)
         {
@@ -467,6 +469,7 @@ namespace Legacy.Services
                 BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInLegacyRSIDb(jobData.jobId, rsiId));
                 BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInRSIDb(jobData.jobId, rsiId));
                 BackgroundJob.Enqueue<MemberServices>(x => x.UpdateFamilyInRSIDb(jobData.jobId, rsiId));
+                //UpdateFamilyInRSIDb(jobData.jobId, rsiId);
 
                 return new MemberInfoViewModel() { Message = "Success" };
             }
@@ -678,7 +681,7 @@ namespace Legacy.Services
             .WithSqlParam("IsActive", true)
             .WithSqlParam("IsGuest", null)
             .WithSqlParam("IsComped", null)
-            .ExecuteStoredProcAsync<int>();
+            .ExecuteStoredProcAsync<int>().Result;
             #endregion MemberUpdateVIP
 
             #region MemberUpdateCRM
@@ -717,7 +720,7 @@ namespace Legacy.Services
             .WithSqlParam("ExpirationDate", null)
             .WithSqlParam("IsActive", true)
             .WithSqlParam("IsMilitary", null)
-            .ExecuteStoredProcAsync<int>();
+            .ExecuteStoredProcAsync<int>().Result;
             #endregion MemberUpdateCRM
 
             #region MemberUpdateCB
@@ -749,7 +752,7 @@ namespace Legacy.Services
             .WithSqlParam("BirthDate2", model.SecondaryMember.DateOfBirth)
             .WithSqlParam("ExpirationDate", null)
             .WithSqlParam("PROFILEID", null)
-            .ExecuteStoredProcAsync<int>();
+            .ExecuteStoredProcAsync<int>().Result;
             #endregion MemberUpdateCB
         }
         public void UpdateFamilyInRSIDb(int jobId, int rsiId)
