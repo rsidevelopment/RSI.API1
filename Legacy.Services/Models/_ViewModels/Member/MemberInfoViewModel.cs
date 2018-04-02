@@ -32,7 +32,7 @@ namespace Legacy.Services.Models._ViewModels.Member
                 {
                     var p = FamilyMembers[i];
                     if (i > 0) fms += ",";
-                    fms += $"{p.FistName} {p.LastName}";
+                    fms += $"{p.FirstName} {p.LastName}";
                 }
 
                 return fms;
@@ -212,7 +212,7 @@ namespace Legacy.Services.Models._ViewModels.Member
         [JsonProperty(PropertyName = "family_member_id"), Required]
         public long FamilyMemberId { get; set; }
         [JsonProperty(PropertyName = "first_name"), StringLength(50), Required]
-        public string FistName { get; set; }
+        public string FirstName { get; set; }
         [JsonProperty(PropertyName = "middle_name"), StringLength(50)]
         public string MiddleName { get; set; } = "";
         [JsonProperty(PropertyName = "last_name"), StringLength(50), Required]

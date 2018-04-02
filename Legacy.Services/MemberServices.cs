@@ -93,7 +93,7 @@ namespace Legacy.Services
                                         MiddleName = "",
 
                                         FamilyMemberId = rdr.GetInt64(0),
-                                        FistName = !rdr.IsDBNull(2) ? rdr.GetString(2) : "",
+                                        FirstName = !rdr.IsDBNull(2) ? rdr.GetString(2) : "",
                                         LastName = !rdr.IsDBNull(3) ? rdr.GetString(3) : ""
                                     };
 
@@ -385,6 +385,45 @@ namespace Legacy.Services
             return returnObj;
         }
 
+        void DeactivateAuthorizedUser(long rsiId)
+        {
+            var result = _rsiContext.LoadStoredProc("dbo.DeactivateAuthorizedUser")
+            .WithSqlParam("Id", rsiId)
+            .ExecuteStoredProcAsync<int>();
+        }
+        void AddUpdateCRMAuthorizedUsers(long rsiId, FamilyMemberViewModel familyMember)
+        {
+            var result = _rsiContext.LoadStoredProc("dbo.AddUpdateCRMAuthorizedUsers")
+            .WithSqlParam("Id", rsiId)
+            .WithSqlParam("RSIId", familyMember.FamilyMemberId)
+            .WithSqlParam("FirstName", familyMember.FirstName)
+            .WithSqlParam("LastName", familyMember.LastName)
+            .WithSqlParam("BirthDate", familyMember.DateOfBirth)
+            .WithSqlParam("Relationship", familyMember.Relationship)
+            .WithSqlParam("Email", familyMember.Email)
+            .WithSqlParam("PrimaryPhone", familyMember.PrimaryPhone)
+            .WithSqlParam("SecondaryPhone", familyMember.AlternativePhone)
+            .ExecuteStoredProcAsync<int>();
+        }
+        void AddUpdateCRMAuthorizedUsers(long rsiId, PersonViewModel secondary)
+        {
+            var result = _rsiContext.LoadStoredProc("dbo.AddUpdateCRMAuthorizedUsers")
+            .WithSqlParam("Id", rsiId)
+            .WithSqlParam("RSIId", secondary.RSIId)
+            .WithSqlParam("FirstName", secondary.FirstName)
+            .WithSqlParam("LastName", secondary.LastName)
+            .WithSqlParam("BirthDate", secondary.DateOfBirth)
+            .WithSqlParam("Relationship", "SPOUSE")
+            .WithSqlParam("Email", secondary.Email)
+            .WithSqlParam("PrimaryPhone", secondary.HomePhone)
+            .WithSqlParam("SecondaryPhone", secondary.MobilePhone)
+            .WithSqlParam("Address", $"{secondary.Address1} {secondary.Address2}")
+            .WithSqlParam("City", secondary.City)
+            .WithSqlParam("State", secondary.State)
+            .WithSqlParam("PostalCode", secondary.PostalCode)
+            .WithSqlParam("Country", secondary.Country)
+            .ExecuteStoredProcAsync<int>();
+        }
         public async Task<(bool isSuccess, string message)> AddUpdateFamilyAsync(int rsiId, List<FamilyMemberViewModel> family)
         {
             (bool isSuccess, string message) returnObj = (false, "");
@@ -398,7 +437,18 @@ namespace Legacy.Services
                 }
                 else
                     returnObj = (false, $"Error: ({rsiId}) is not found");
-                
+
+                var previousFamily = await GetFamilyAsync(rsiId);
+                foreach (var fm in previousFamily.family)
+                {
+                    if (!family.Any(f => { return f.FamilyMemberId == fm.FamilyMemberId; }))
+                        DeactivateAuthorizedUser(fm.FamilyMemberId);
+                }
+
+                foreach (var fm in family)
+                {
+                    AddUpdateCRMAuthorizedUsers(rsiId, fm);
+                }
             }
             catch (Exception ex)
             {
@@ -416,6 +466,7 @@ namespace Legacy.Services
 
                 BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInLegacyRSIDb(jobData.jobId, rsiId));
                 BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInRSIDb(jobData.jobId, rsiId));
+                BackgroundJob.Enqueue<MemberServices>(x => x.UpdateFamilyInRSIDb(jobData.jobId, rsiId));
 
                 return new MemberInfoViewModel() { Message = "Success" };
             }
@@ -701,6 +752,19 @@ namespace Legacy.Services
             .ExecuteStoredProcAsync<int>();
             #endregion MemberUpdateCB
         }
+        public void UpdateFamilyInRSIDb(int jobId, int rsiId)
+        {
+            var updatedMemberInfo = _hfContext.GetModelForJobId<MemberInfoViewModel>(jobId);
+
+            if (string.IsNullOrEmpty(updatedMemberInfo.SecondaryMember.FirstName))
+                DeactivateAuthorizedUser(updatedMemberInfo.SecondaryMember.RSIId);
+            else
+                AddUpdateCRMAuthorizedUsers(rsiId, updatedMemberInfo.SecondaryMember);
+
+            var response = AddUpdateFamilyAsync(rsiId, updatedMemberInfo.FamilyMembers).Result;
+            if (!response.isSuccess)
+                throw new Exception($"UpdateFamilyInRSIDb Failed for RSIId: {rsiId}  Reason: {response.message} ");
+        }
 
         public async Task<(bool isSuccess, string message, List<TravelDetailViewModel> travels)> GetTravelInfoAsync(int rsiId)
         {
@@ -916,7 +980,7 @@ namespace Legacy.Services
                                         MiddleName = "",
 
                                         FamilyMemberId = rdr.GetInt64(0),
-                                        FistName = !rdr.IsDBNull(2) ? rdr.GetString(2) : "",
+                                        FirstName = !rdr.IsDBNull(2) ? rdr.GetString(2) : "",
                                         LastName = !rdr.IsDBNull(3) ? rdr.GetString(3) : ""
                                     };
 
