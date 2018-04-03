@@ -21,6 +21,7 @@ namespace Legacy.Services.Data
         public DbSet<RegionsModel> Regions { get; set; }
         public DbSet<AmenitiesModel> Amenities { get; set; }
         public DbSet<PicsModel> Pics { get; set; }
+        public DbSet<BrioClubLeadsModel> BrioClubLeads { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

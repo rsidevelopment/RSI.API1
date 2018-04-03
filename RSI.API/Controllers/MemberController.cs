@@ -1,20 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
-using Legacy.Services.Interfaces;
+﻿using Legacy.Services.Interfaces;
 using Legacy.Services.Models._ViewModels;
 using Legacy.Services.Models._ViewModels.Member;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace RSI.API.Controllers
 {
-    [Route("api/[controller]")]//, Authorize]
+    [Route("api/[controller]"), Authorize]
     public class MemberController : Controller
     {
         private readonly IMemberService _context;
@@ -29,7 +27,7 @@ namespace RSI.API.Controllers
         [HttpGet]
         public async Task<_ListViewModel<MemberListViewModel>> Get(int startRowIndex, int numberOfRows, string firstName, string lastName, string email, string phone, int organizationId, string catchAll
             , string sortColumn = "DEFAULT", string sortDirection = "ASC"
-            , bool exactMatch = true)
+            , bool exactMatch = true, string clubReference="BRIO")
         {
             var model = new _ListViewModel<MemberListViewModel>();
 
@@ -47,7 +45,8 @@ namespace RSI.API.Controllers
                     Phone = phone,
                     SortColumn = sortColumn,
                     SortDirection = sortDirection,
-                    StartRowIndex = startRowIndex
+                    StartRowIndex = startRowIndex,
+                    ClubReference = clubReference
                 };
 
                 model = await _context.GetMembersAsync(search);
@@ -69,13 +68,13 @@ namespace RSI.API.Controllers
         }
 
         [HttpGet("{rsiId}")]
-        public async Task<MemberInfoViewModel> Get(int rsiId)
+        public async Task<MemberInfoViewModel> Get(int rsiId, string clubReference = "BRIO")
         {
             var model = new MemberInfoViewModel();
 
             try
             {
-                model = await _context.GetMemberAsync(rsiId);
+                model = await _context.GetMemberAsync(rsiId, clubReference);
             }
             catch (Exception ex)
             {
@@ -94,7 +93,7 @@ namespace RSI.API.Controllers
         }
         
         [HttpGet("{id}/family")]
-        public async Task<List<FamilyMemberViewModel>> Family(int id)
+        public async Task<List<FamilyMemberViewModel>> Family(int id, string clubReference = "BRIO")
         {
             (bool isSuccess, string message, List<FamilyMemberViewModel> family) returnModel = (false, "", new List<FamilyMemberViewModel>());
 
@@ -102,7 +101,7 @@ namespace RSI.API.Controllers
             {
                 var model = new List<FamilyMemberViewModel>();
 
-                returnModel = await _context.GetFamilyAsync(id);
+                returnModel = await _context.GetFamilyAsync(id, clubReference);
             }
             catch (Exception ex)
             {
@@ -133,14 +132,15 @@ namespace RSI.API.Controllers
 
             return returnObj;
         }
+
         [HttpGet("{id}/upgrade")]
-        public async Task<MemberUpgradeViewModel> GetUpgrade(int id)
+        public async Task<MemberUpgradeViewModel> GetUpgrade(int id, string clubReference = "BRIO")
         {
             var model = new MemberUpgradeViewModel();
 
             try
             {
-                model = await _context.GetUpgradeInfoAsync(id);
+                model = await _context.GetUpgradeInfoAsync(id, clubReference);
             }
             catch (Exception ex)
             {

@@ -34,5 +34,7 @@ namespace Legacy.Services.Models._ViewModels.Member
         }
         [JsonProperty(PropertyName = "organization_id")]
         public int? OrganizationId { get; set; } = null;
+        [JsonProperty(PropertyName = "club_reference")]
+        public string ClubReference { get; set; } = "BRIO";
     }
 }

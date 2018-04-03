@@ -32,18 +32,24 @@ namespace Legacy.Services
             _packageService = packageService;
         }
 
-        public async Task<(bool isSuccess, string message, List<FamilyMemberViewModel> family)> GetFamilyAsync(int rsiId)
+        public async Task<(bool isSuccess, string message, List<FamilyMemberViewModel> family)> GetFamilyAsync(int rsiId, string clubReference)
         {
             (bool isSuccess, string message, List<FamilyMemberViewModel> family) returnModel = (false, "", new List<FamilyMemberViewModel>());
 
             try
             {
+                int auth = await (from u in _legacyContext.Users
+                           join c in _legacyContext.BrioClubLeads on u.MemberId equals c.rsiId
+                          where u.MemberId == rsiId && (c.clubReference == clubReference ||
+                          clubReference == string.Empty)
+                         select u.MemberId).FirstOrDefaultAsync();
+
                 DateTime now = DateTime.Today;
                 //int age = now.Year - tmp.ActivationDate.GetValueOrDefault().Year;
                 //if (tmp.ActivationDate.GetValueOrDefault() > now.AddYears(-age)) age--;
 
                 MemberModel member = await _legacyContext.Users.FirstOrDefaultAsync(x => x.MemberId == rsiId);
-                if (member != null && member.MemberId > 0)
+                if (member != null && member.MemberId > 0 && member.MemberId == auth)
                 {
                     using (var conn = new SqlConnection(SqlHelper.GetConnectionString()))
                     {
@@ -140,15 +146,20 @@ namespace Legacy.Services
             return returnModel;
         }
 
-        public async Task<MemberUpgradeViewModel> GetUpgradeInfoAsync(int rsiId)
+        public async Task<MemberUpgradeViewModel> GetUpgradeInfoAsync(int rsiId, string clubReference)
         {
             MemberUpgradeViewModel model = new MemberUpgradeViewModel();
 
             try
             {
+                int auth = await (from u in _legacyContext.Users
+                                  join c in _legacyContext.BrioClubLeads on u.MemberId equals c.rsiId
+                                 where u.MemberId == rsiId && c.clubReference == clubReference
+                                 select u.MemberId).FirstOrDefaultAsync();
+
                 var tmp = await _legacyContext.UpgradeAudits.FirstOrDefaultAsync(x => x.RSIId == rsiId);
 
-                if(tmp != null && tmp.UpgradeAuditId > 0)
+                if(tmp != null && tmp.UpgradeAuditId > 0 && auth == rsiId)
                 {
                     model = new MemberUpgradeViewModel()
                     {
@@ -451,7 +462,7 @@ namespace Legacy.Services
                 if (member == null || member.MemberId == 0)
                     return (false, $"Error: ({rsiId}) is not found");
 
-                var previousFamily = await GetFamilyAsync(rsiId);
+                var previousFamily = await GetFamilyAsync(rsiId, string.Empty);
                 foreach (var fm in previousFamily.family)
                 {
                     if (!family.Any(f => { return f.FamilyMemberId == fm.FamilyMemberId; }))
@@ -840,19 +851,22 @@ namespace Legacy.Services
             return model;
         }
 
-        public async Task<MemberInfoViewModel> GetMemberAsync(int rsiId)
+        public async Task<MemberInfoViewModel> GetMemberAsync(int rsiId, string clubReference)
         {
             MemberInfoViewModel model = new MemberInfoViewModel();
 
             try
             {
                 var tmp = await (from u in _legacyContext.Users
+                           join c in _legacyContext.BrioClubLeads on u.MemberId equals c.rsiId
                            join o in _legacyContext.Organizations on u.org equals o.OrganizationId
                            join r in _legacyContext.RenewalInfo on u.MemberId equals r.RSIId into gj
                            from subr in gj.DefaultIfEmpty()
-                           where u.MemberId == rsiId
+                           where u.MemberId == rsiId &&
+                                 c.clubReference==clubReference
                            select new
                            {
+                               c.clubReference, 
                                u.fname,
                                u.MiddleInitial,
                                u.lname,
@@ -1096,9 +1110,11 @@ namespace Legacy.Services
             try
             {
                 var qry = from u in _legacyContext.Users
+                          join c in _legacyContext.BrioClubLeads on u.MemberId equals c.rsiId
                           join o in _legacyContext.Organizations on u.org equals o.OrganizationId
                           select new 
                           {
+                              c.clubReference,
                               u.email,
                               u.fname,
                               u.lname,
@@ -1109,6 +1125,8 @@ namespace Legacy.Services
                               u.phone1,
                               u.phone2
                           };
+
+                qry = qry.Where(c => c.clubReference == search.ClubReference);
 
                 if (!String.IsNullOrEmpty(search.FistName))
                 {
