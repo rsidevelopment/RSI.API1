@@ -93,7 +93,10 @@ namespace RSI.API
             GlobalConfiguration.Configuration
                 .UseActivator(new HangfireActivator(serviceProvider));
 
-            app.UseHangfireServer();
+            app.UseHangfireServer(new BackgroundJobServerOptions
+            {
+                Queues = new[] { "rsi_api" }
+            });
             app.UseHangfireDashboard();
 
             app.UseMvc();

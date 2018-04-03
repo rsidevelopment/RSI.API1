@@ -502,6 +502,7 @@ namespace Legacy.Services
             }
         }
 
+        [Queue("rsi_api")]
         public void UpdateMemberInLegacyRSIDb(int jobId, int rsiId)
         {
             var model = _hfContext.GetModelForJobId<MemberInfoViewModel>(jobId);
@@ -657,6 +658,7 @@ namespace Legacy.Services
                 throw new Exception($"Error: ({rsiId}) is not found");
             }
         }
+        [Queue("rsi_api")]
         public void UpdateMemberInRSIDb(int jobId, int rsiId)
         {
             var model = _hfContext.GetModelForJobId<MemberInfoViewModel>(jobId);
@@ -779,6 +781,7 @@ namespace Legacy.Services
             .ExecuteStoredProcAsync<int>().Result;
             #endregion MemberUpdateCB
         }
+        [Queue("rsi_api")]
         public void UpdateFamilyInRSIDb(int jobId, int rsiId)
         {
             var updatedMemberInfo = _hfContext.GetModelForJobId<MemberInfoViewModel>(jobId);
