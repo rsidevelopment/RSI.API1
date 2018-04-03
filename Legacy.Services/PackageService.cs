@@ -98,7 +98,7 @@ namespace Legacy.Services
                             model.BelowRetailDiscount = rdr.GetInt32(17);
 
                         if (!rdr.IsDBNull(18))
-                            model.CondoWeeks = Decimal.ToInt32(rdr.GetDecimal(18));
+                            model.CondoWeeks = rdr.GetInt32(18);
 
                     }
 
