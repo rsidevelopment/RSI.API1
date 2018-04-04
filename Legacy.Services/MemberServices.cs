@@ -1268,12 +1268,54 @@ namespace Legacy.Services
                     qry = qry.Skip(search.StartRowIndex.GetValueOrDefault(0)).Take(search.NumberOfRows.GetValueOrDefault(0));
                 }
 
-                string ids = "";
+                //string ids = "";
                 
                 List<MemberListViewModel> tmp = new List<MemberListViewModel>();
-                int ctIds = 0;
+                //int ctIds = 0;
                 foreach(var row in qry)
                 {
+                    int pid = 0;
+                    string pname = "";
+
+                    if (row.PackageId.GetValueOrDefault(0) > 0)
+                    {
+                        pid = row.PackageId.GetValueOrDefault(0);
+                    }
+                    /*
+                        pid = row.PackageId.GetValueOrDefault(0);
+                        using (var conn = new SqlConnection(SqlHelper.GetConnectionString()))
+                        {
+                            var parameters = new[]
+                            {
+                            new SqlParameter("@RSIId", row.MemberId)
+                        };
+
+                            var rdr = await SqlHelper.ExecuteReaderAsync(
+                                  conn,
+                                  CommandType.StoredProcedure,
+                                  "[dbo].[GetPackageIdAndNameByRSIId]",
+                                  parameters);
+
+                            if (rdr.HasRows)
+                            {
+                                rdr.Read();
+                                //var pn = tmp.FirstOrDefault(x => x.MemberId == rdr.GetInt32(0));
+                                //if (pn != null)
+                               // {
+                                string fullName = rdr.GetFieldType(0).FullName;
+                                if (!rdr.IsDBNull(0) && fullName == "System.Decimal")
+                                    pid = Decimal.ToInt32(rdr.GetDecimal(0));
+                                else if (!rdr.IsDBNull(0) && fullName == "System.Int32")
+                                    pid = rdr.GetInt32(0);
+                                if(!rdr.IsDBNull(1))
+                                    pname = rdr.GetString(1);
+                                //}
+
+
+                            }
+                        }
+                    }*/
+
                     MemberListViewModel t = new MemberListViewModel()
                     {
                         Email = row.email,
@@ -1285,26 +1327,27 @@ namespace Legacy.Services
                         OrganizationName = row.OrganizationName,
                         Phone1 = row.phone1,
                         Phone2 = row.phone2,
-                        PackageId = row.PackageId.GetValueOrDefault(0)
+                        PackageId = pid,
+                        PackageName = pname
                     };
 
                     tmp.Add(t);
+                    //if (t.PackageId > 0)
+                    //{
+                        //if (ids.Length > 0)
+                           // ids += ",";
 
-                    if (t.PackageId > 0)
-                    {
-                        if (ids.Length > 0)
-                            ids += ",";
-
-                        ids += row.MemberId;
-
-                        if (ctIds > 9)
+                        //ids += row.MemberId;
+                    
+                    
+                        /*if (ctIds > 6)
                         {
                             using (var conn = new SqlConnection(SqlHelper.GetConnectionString()))
                             {
                                 var parameters = new[]
                                 {
-                                new SqlParameter("@RSIIds", ids)
-                            };
+                                    new SqlParameter("@RSIIds", ids)
+                                };
 
                                 var rdr = await SqlHelper.ExecuteReaderAsync(
                                        conn,
@@ -1318,26 +1361,31 @@ namespace Legacy.Services
                                         if (!rdr.IsDBNull(0) && !rdr.IsDBNull(1) && !rdr.IsDBNull(2))
                                         {
                                             var pn = tmp.FirstOrDefault(x => x.MemberId == rdr.GetInt32(0));
-                                            pn.PackageId = rdr.GetInt32(1);
-                                            pn.PackageName = rdr.GetString(2);
+                                            if (pn != null)
+                                            {
+                                                string fullName = rdr.GetFieldType(1).FullName;
+                                                pn.PackageId = rdr.GetInt32(1);
+                                                pn.PackageName = rdr.GetString(2);
+                                            }
                                         }
 
 
                                     }
 
-                                    ids = "";
-                                    ctIds = 0;
+                                    
                                 }
                             }
+                            ids = "";
+                            ctIds = 0;
                         }
                         else
                         {
                             ctIds++;
-                        }
-                    }
+                        }*/
+                    //}
                 }
 
-                if(ids.Length > 0)
+                /*if(ids.Length > 0)
                 {
                     using (var conn = new SqlConnection(SqlHelper.GetConnectionString()))
                     {
@@ -1358,13 +1406,19 @@ namespace Legacy.Services
                                 if (!rdr.IsDBNull(0) && !rdr.IsDBNull(1) && !rdr.IsDBNull(2))
                                 {
                                     var pn = tmp.FirstOrDefault(x => x.MemberId == rdr.GetInt32(0));
-                                    pn.PackageId = rdr.GetInt32(1);
+                                    if (rdr.GetFieldType(1).FullName == "System.Int32")
+                                    {
+                                        if(!rdr.IsDBNull(1))
+                                            pn.PackageId = rdr.GetInt32(1);
+                                    }
+
                                     pn.PackageName = rdr.GetString(2);
                                 }
                             }
                         }
                     }
                 }
+                */
 
                 model.Rows = tmp;
 
