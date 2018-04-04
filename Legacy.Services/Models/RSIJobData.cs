@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace Legacy.Services.Models
 {
@@ -12,5 +9,7 @@ namespace Legacy.Services.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int jobId { get; set; }
         public string data { get; set; }
+        public int RSIId { get; set; }
+        public string info { get; set; }
     }
 }

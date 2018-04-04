@@ -33,24 +33,5 @@ namespace Legacy.Services.Data
         {
             base.OnModelCreating(modelBuilder);
         }
-
-        public RSIJobData NewRSIJobData(object model)
-        {
-            var jobData = new RSIJobData()
-            {
-                data = JsonConvert.SerializeObject(model)
-            };
-
-            RSIJobData.Add(jobData);
-            SaveChanges();
-
-            return jobData;
-        }
-
-        public T GetModelForJobId<T>(int jobId)
-        {
-            var jobData = RSIJobData.FirstOrDefault(x => x.jobId == jobId);
-            return JsonConvert.DeserializeObject<T>(jobData.data);
-        }
     }
 }

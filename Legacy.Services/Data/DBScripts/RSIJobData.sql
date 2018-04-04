@@ -10,5 +10,9 @@ GO
 CREATE TABLE [dbo].[RSIJobData]
 (
 	[jobId] INT NOT NULL IDENTITY (1,1) PRIMARY KEY,
-    [data] VARCHAR(MAX) NOT NULL
+    [data] VARCHAR(MAX) NOT NULL,
+	[RSIId] int NULL,
+    [info] VARCHAR(MAX) NULL
 )
+
+CREATE INDEX RSIId_idx ON [dbo].[RSIJobData] (RSIId); 
