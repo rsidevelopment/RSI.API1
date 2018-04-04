@@ -930,6 +930,7 @@ namespace Legacy.Services
                     model.PrimaryMember.State = tmp.StateCode;
                     model.PrimaryMember.PostalCode = tmp.PostalCode;
                     model.PrimaryMember.Country = tmp.CountryCode;
+                   
                     
                     DateTime now = DateTime.Today;
                     int age = now.Year - tmp.ActivationDate.GetValueOrDefault().Year;
@@ -1155,7 +1156,8 @@ namespace Legacy.Services
                               u.org,
                               o.OrganizationName,
                               u.phone1,
-                              u.phone2
+                              u.phone2,
+                              u.PackageId
                           };
 
                 qry = qry.Where(c => c.clubReference == search.ClubReference);
@@ -1199,9 +1201,11 @@ namespace Legacy.Services
 
                 if (!String.IsNullOrEmpty(search.CatchAll))
                 {
+                    int rsiId = 0;
                     if (search.ExactMatch)
                     {
                         //int orgId = 0;
+                        
 
                         qry = qry.Where(
                             w => w.fname == search.CatchAll ||
@@ -1210,7 +1214,8 @@ namespace Legacy.Services
                                 w.phone1 == search.CatchAll ||
                                 w.phone2 == search.CatchAll ||
                                 //w.org == (int.TryParse(search.CatchAll, out orgId) ? orgId : w.org) ||
-                                w.OrganizationName == search.CatchAll
+                                w.OrganizationName == search.CatchAll ||
+                                w.MemberId == (int.TryParse(search.CatchAll, out rsiId) ? rsiId : w.MemberId)
                             );
                     }
                     else
@@ -1224,7 +1229,8 @@ namespace Legacy.Services
                                 w.phone1.Contains(search.CatchAll) ||
                                 w.phone2.Contains(search.CatchAll) ||
                                 //w.org == (int.TryParse(search.CatchAll, out orgId) ? orgId : w.org) ||
-                                w.OrganizationName.Contains(search.CatchAll)
+                                w.OrganizationName.Contains(search.CatchAll) ||
+                                w.MemberId == (int.TryParse(search.CatchAll, out rsiId) ? rsiId : w.MemberId)
                             );
                     }
                 }
@@ -1281,16 +1287,60 @@ namespace Legacy.Services
                 }
 
                 model.TotalCount = await qry.CountAsync();
-
+                
                 if(search.NumberOfRows.GetValueOrDefault(0) > 0)
                 {
                     qry = qry.Skip(search.StartRowIndex.GetValueOrDefault(0)).Take(search.NumberOfRows.GetValueOrDefault(0));
                 }
+
+                //string ids = "";
                 
                 List<MemberListViewModel> tmp = new List<MemberListViewModel>();
-
+                //int ctIds = 0;
                 foreach(var row in qry)
                 {
+                    int pid = 0;
+                    string pname = "";
+
+                    if (row.PackageId.GetValueOrDefault(0) > 0)
+                    {
+                        pid = row.PackageId.GetValueOrDefault(0);
+                    }
+                    /*
+                        pid = row.PackageId.GetValueOrDefault(0);
+                        using (var conn = new SqlConnection(SqlHelper.GetConnectionString()))
+                        {
+                            var parameters = new[]
+                            {
+                            new SqlParameter("@RSIId", row.MemberId)
+                        };
+
+                            var rdr = await SqlHelper.ExecuteReaderAsync(
+                                  conn,
+                                  CommandType.StoredProcedure,
+                                  "[dbo].[GetPackageIdAndNameByRSIId]",
+                                  parameters);
+
+                            if (rdr.HasRows)
+                            {
+                                rdr.Read();
+                                //var pn = tmp.FirstOrDefault(x => x.MemberId == rdr.GetInt32(0));
+                                //if (pn != null)
+                               // {
+                                string fullName = rdr.GetFieldType(0).FullName;
+                                if (!rdr.IsDBNull(0) && fullName == "System.Decimal")
+                                    pid = Decimal.ToInt32(rdr.GetDecimal(0));
+                                else if (!rdr.IsDBNull(0) && fullName == "System.Int32")
+                                    pid = rdr.GetInt32(0);
+                                if(!rdr.IsDBNull(1))
+                                    pname = rdr.GetString(1);
+                                //}
+
+
+                            }
+                        }
+                    }*/
+
                     MemberListViewModel t = new MemberListViewModel()
                     {
                         Email = row.email,
@@ -1301,12 +1351,99 @@ namespace Legacy.Services
                         OrganizationId = row.org.GetValueOrDefault(0),
                         OrganizationName = row.OrganizationName,
                         Phone1 = row.phone1,
-                        Phone2 = row.phone2
+                        Phone2 = row.phone2,
+                        PackageId = pid,
+                        PackageName = pname
                     };
 
                     tmp.Add(t);
+                    //if (t.PackageId > 0)
+                    //{
+                        //if (ids.Length > 0)
+                           // ids += ",";
+
+                        //ids += row.MemberId;
+                    
+                    
+                        /*if (ctIds > 6)
+                        {
+                            using (var conn = new SqlConnection(SqlHelper.GetConnectionString()))
+                            {
+                                var parameters = new[]
+                                {
+                                    new SqlParameter("@RSIIds", ids)
+                                };
+
+                                var rdr = await SqlHelper.ExecuteReaderAsync(
+                                       conn,
+                                       CommandType.StoredProcedure,
+                                       "[dbo].[GetPackageInfosByRSIIds]",
+                                       parameters);
+                                if (rdr.HasRows)
+                                {
+                                    while (rdr.Read())
+                                    {
+                                        if (!rdr.IsDBNull(0) && !rdr.IsDBNull(1) && !rdr.IsDBNull(2))
+                                        {
+                                            var pn = tmp.FirstOrDefault(x => x.MemberId == rdr.GetInt32(0));
+                                            if (pn != null)
+                                            {
+                                                string fullName = rdr.GetFieldType(1).FullName;
+                                                pn.PackageId = rdr.GetInt32(1);
+                                                pn.PackageName = rdr.GetString(2);
+                                            }
+                                        }
+
+
+                                    }
+
+                                    
+                                }
+                            }
+                            ids = "";
+                            ctIds = 0;
+                        }
+                        else
+                        {
+                            ctIds++;
+                        }*/
+                    //}
                 }
 
+                /*if(ids.Length > 0)
+                {
+                    using (var conn = new SqlConnection(SqlHelper.GetConnectionString()))
+                    {
+                        var parameters = new[]
+                        {
+                            new SqlParameter("@RSIIds", ids)
+                        };
+
+                        var rdr = await SqlHelper.ExecuteReaderAsync(
+                               conn,
+                               CommandType.StoredProcedure,
+                               "[dbo].[GetPackageInfosByRSIIds]",
+                               parameters);
+                        if (rdr.HasRows)
+                        {
+                            while (rdr.Read())
+                            {
+                                if (!rdr.IsDBNull(0) && !rdr.IsDBNull(1) && !rdr.IsDBNull(2))
+                                {
+                                    var pn = tmp.FirstOrDefault(x => x.MemberId == rdr.GetInt32(0));
+                                    if (rdr.GetFieldType(1).FullName == "System.Int32")
+                                    {
+                                        if(!rdr.IsDBNull(1))
+                                            pn.PackageId = rdr.GetInt32(1);
+                                    }
+
+                                    pn.PackageName = rdr.GetString(2);
+                                }
+                            }
+                        }
+                    }
+                }
+                */
 
                 model.Rows = tmp;
 
