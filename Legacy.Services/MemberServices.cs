@@ -906,6 +906,7 @@ namespace Legacy.Services
                     model.PrimaryMember.State = tmp.StateCode;
                     model.PrimaryMember.PostalCode = tmp.PostalCode;
                     model.PrimaryMember.Country = tmp.CountryCode;
+                   
                     
                     DateTime now = DateTime.Today;
                     int age = now.Year - tmp.ActivationDate.GetValueOrDefault().Year;
@@ -1170,9 +1171,11 @@ namespace Legacy.Services
 
                 if (!String.IsNullOrEmpty(search.CatchAll))
                 {
+                    int rsiId = 0;
                     if (search.ExactMatch)
                     {
                         //int orgId = 0;
+                        
 
                         qry = qry.Where(
                             w => w.fname == search.CatchAll ||
@@ -1181,7 +1184,8 @@ namespace Legacy.Services
                                 w.phone1 == search.CatchAll ||
                                 w.phone2 == search.CatchAll ||
                                 //w.org == (int.TryParse(search.CatchAll, out orgId) ? orgId : w.org) ||
-                                w.OrganizationName == search.CatchAll
+                                w.OrganizationName == search.CatchAll ||
+                                w.MemberId == (int.TryParse(search.CatchAll, out rsiId) ? rsiId : w.MemberId)
                             );
                     }
                     else
@@ -1195,7 +1199,8 @@ namespace Legacy.Services
                                 w.phone1.Contains(search.CatchAll) ||
                                 w.phone2.Contains(search.CatchAll) ||
                                 //w.org == (int.TryParse(search.CatchAll, out orgId) ? orgId : w.org) ||
-                                w.OrganizationName.Contains(search.CatchAll)
+                                w.OrganizationName.Contains(search.CatchAll) ||
+                                w.MemberId == (int.TryParse(search.CatchAll, out rsiId) ? rsiId : w.MemberId)
                             );
                     }
                 }
@@ -1252,11 +1257,13 @@ namespace Legacy.Services
                 }
 
                 model.TotalCount = await qry.CountAsync();
-
+                
                 if(search.NumberOfRows.GetValueOrDefault(0) > 0)
                 {
                     qry = qry.Skip(search.StartRowIndex.GetValueOrDefault(0)).Take(search.NumberOfRows.GetValueOrDefault(0));
                 }
+
+                string ids = "";
                 
                 List<MemberListViewModel> tmp = new List<MemberListViewModel>();
 
@@ -1276,8 +1283,37 @@ namespace Legacy.Services
                     };
 
                     tmp.Add(t);
+
+                    if (ids.Length > 0)
+                        ids += ",";
+
+                    ids += row.MemberId;
                 }
 
+                if(ids.Length > 0)
+                {
+                    using (var conn = new SqlConnection(SqlHelper.GetConnectionString()))
+                    {
+                        var parameters = new[]
+                        {
+                            new SqlParameter("@RSIIds", ids)
+                        };
+
+                        var rdr = await SqlHelper.ExecuteReaderAsync(
+                               conn,
+                               CommandType.StoredProcedure,
+                               "[dbo].[GetPackageInfosByRSIIds]",
+                               parameters);
+                        if (rdr.HasRows)
+                        {
+                            while (rdr.Read())
+                            {
+                                if (!rdr.IsDBNull(0) && !rdr.IsDBNull(2))
+                                    tmp.FirstOrDefault(t => t.MemberId == rdr.GetInt32(0)).PackageName = rdr.GetString(2);
+                            }
+                        }
+                    }
+                }
 
                 model.Rows = tmp;
 
