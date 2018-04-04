@@ -1131,7 +1131,8 @@ namespace Legacy.Services
                               u.org,
                               o.OrganizationName,
                               u.phone1,
-                              u.phone2
+                              u.phone2,
+                              u.PackageId
                           };
 
                 qry = qry.Where(c => c.clubReference == search.ClubReference);
@@ -1270,7 +1271,7 @@ namespace Legacy.Services
                 string ids = "";
                 
                 List<MemberListViewModel> tmp = new List<MemberListViewModel>();
-
+                int ctIds = 0;
                 foreach(var row in qry)
                 {
                     MemberListViewModel t = new MemberListViewModel()
@@ -1283,15 +1284,57 @@ namespace Legacy.Services
                         OrganizationId = row.org.GetValueOrDefault(0),
                         OrganizationName = row.OrganizationName,
                         Phone1 = row.phone1,
-                        Phone2 = row.phone2
+                        Phone2 = row.phone2,
+                        PackageId = row.PackageId.GetValueOrDefault(0)
                     };
 
                     tmp.Add(t);
 
-                    if (ids.Length > 0)
-                        ids += ",";
+                    if (t.PackageId > 0)
+                    {
+                        if (ids.Length > 0)
+                            ids += ",";
 
-                    ids += row.MemberId;
+                        ids += row.MemberId;
+
+                        if (ctIds > 9)
+                        {
+                            using (var conn = new SqlConnection(SqlHelper.GetConnectionString()))
+                            {
+                                var parameters = new[]
+                                {
+                                new SqlParameter("@RSIIds", ids)
+                            };
+
+                                var rdr = await SqlHelper.ExecuteReaderAsync(
+                                       conn,
+                                       CommandType.StoredProcedure,
+                                       "[dbo].[GetPackageInfosByRSIIds]",
+                                       parameters);
+                                if (rdr.HasRows)
+                                {
+                                    while (rdr.Read())
+                                    {
+                                        if (!rdr.IsDBNull(0) && !rdr.IsDBNull(1) && !rdr.IsDBNull(2))
+                                        {
+                                            var pn = tmp.FirstOrDefault(x => x.MemberId == rdr.GetInt32(0));
+                                            pn.PackageId = rdr.GetInt32(1);
+                                            pn.PackageName = rdr.GetString(2);
+                                        }
+
+
+                                    }
+
+                                    ids = "";
+                                    ctIds = 0;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            ctIds++;
+                        }
+                    }
                 }
 
                 if(ids.Length > 0)
@@ -1312,8 +1355,12 @@ namespace Legacy.Services
                         {
                             while (rdr.Read())
                             {
-                                if (!rdr.IsDBNull(0) && !rdr.IsDBNull(2))
-                                    tmp.FirstOrDefault(t => t.MemberId == rdr.GetInt32(0)).PackageName = rdr.GetString(2);
+                                if (!rdr.IsDBNull(0) && !rdr.IsDBNull(1) && !rdr.IsDBNull(2))
+                                {
+                                    var pn = tmp.FirstOrDefault(x => x.MemberId == rdr.GetInt32(0));
+                                    pn.PackageId = rdr.GetInt32(1);
+                                    pn.PackageName = rdr.GetString(2);
+                                }
                             }
                         }
                     }

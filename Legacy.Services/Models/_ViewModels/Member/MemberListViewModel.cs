@@ -25,6 +25,8 @@ namespace Legacy.Services.Models._ViewModels.Member
         public string Phone1 { get; set; }
         [JsonProperty(PropertyName = "phone_2")]
         public string Phone2 { get; set; }
+        [JsonProperty(PropertyName = "package_id")]
+        public int PackageId { get; set; } = 0;
         [JsonProperty(PropertyName = "package_name")]
         public string PackageName { get; set; }
     }
