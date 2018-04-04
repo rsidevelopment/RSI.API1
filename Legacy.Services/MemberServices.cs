@@ -486,13 +486,15 @@ namespace Legacy.Services
         {
             try
             {
-                var jobData = await _hfService.NewRSIJobData(model, rsiId, model.PackageInfo.PackageId.ToString());
+                //var jobData = await _hfService.NewRSIJobData(model, rsiId, 
+                //    (model.PackageInfo != null) ? model.PackageInfo.PackageId.ToString() : "0");
 
-                //UpdateMemberInRSIDb(jobData.jobId, rsiId);
-                //UpdateFamilyInRSIDb(jobData.jobId, rsiId);
-                BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInLegacyRSIDb(jobData.jobId, rsiId));
-                BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInRSIDb(jobData.jobId, rsiId));
-                BackgroundJob.Enqueue<MemberServices>(x => x.UpdateFamilyInRSIDb(jobData.jobId, rsiId));
+                UpdateMemberInLegacyRSIDb(model, rsiId);
+                UpdateMemberInRSIDb(model, rsiId);
+                UpdateFamilyInRSIDb(model, rsiId);
+                //BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInLegacyRSIDb(jobData.jobId, rsiId));
+                //BackgroundJob.Enqueue<MemberServices>(x => x.UpdateMemberInRSIDb(jobData.jobId, rsiId));
+                //BackgroundJob.Enqueue<MemberServices>(x => x.UpdateFamilyInRSIDb(jobData.jobId, rsiId));
 
                 return new MemberInfoViewModel() { Message = "Success" };
             }
@@ -503,44 +505,54 @@ namespace Legacy.Services
         }
 
         [Queue("rsi_api")]
-        public void UpdateMemberInLegacyRSIDb(int jobId, int rsiId)
+        //public void UpdateMemberInLegacyRSIDb(int jobId, int rsiId)
+        public void UpdateMemberInLegacyRSIDb(MemberInfoViewModel model, int rsiId)
         {
-            var model = _hfService.GetModelForJobId<MemberInfoViewModel>(jobId).Result;
+            //var model = _hfService.GetModelForJobId<MemberInfoViewModel>(jobId).Result;
             MemberModel member = _legacyContext.Users.FirstOrDefault(x => x.MemberId == rsiId);
 
             if (member != null && member.MemberId > 0)
             {
                 //org/package info
-                member.org = model.OrganizationInfo.OrganizationId;
-                member.PackageId = model.PackageInfo.PackageId;
+                if (model.OrganizationInfo != null) member.org = model.OrganizationInfo.OrganizationId;
+                if (model.PackageInfo != null)
+                {
+                    member.PackageId = model.PackageInfo.PackageId;
+                    member.HotelRewards = model.PackageInfo.Points.ToString();
+                }
 
                 //primary info
-                member.fname = model.PrimaryMember.FirstName;
-                member.MiddleInitial = model.PrimaryMember.MiddleInitial;
-                member.lname = model.PrimaryMember.LastName;
-                member.BirthDate = model.PrimaryMember.DateOfBirth;
+                if (model.PrimaryMember != null)
+                {
+                    member.fname = model.PrimaryMember.FirstName;
+                    member.MiddleInitial = model.PrimaryMember.MiddleInitial;
+                    member.lname = model.PrimaryMember.LastName;
+                    member.BirthDate = model.PrimaryMember.DateOfBirth;
 
-                member.Address = model.PrimaryMember.Address1;
-                member.Address2 = model.PrimaryMember.Address2;
-                member.City = model.PrimaryMember.City;
-                member.StateCode = model.PrimaryMember.State;
-                member.PostalCode = model.PrimaryMember.PostalCode;
-                member.CountryCode = model.PrimaryMember.Country;
+                    member.Address = model.PrimaryMember.Address1;
+                    member.Address2 = model.PrimaryMember.Address2;
+                    member.City = model.PrimaryMember.City;
+                    member.StateCode = model.PrimaryMember.State;
+                    member.PostalCode = model.PrimaryMember.PostalCode;
+                    member.CountryCode = model.PrimaryMember.Country;
 
-                member.phone1 = model.PrimaryMember.HomePhone;
-                member.phone2 = model.PrimaryMember.MobilePhone;
-                member.email = model.PrimaryMember.Email;
+                    member.phone1 = model.PrimaryMember.HomePhone;
+                    member.phone2 = model.PrimaryMember.MobilePhone;
+                    member.email = model.PrimaryMember.Email;
+                }
 
                 //secondary info
-                member.FirstName2 = model.SecondaryMember.FirstName;
-                member.MiddleInitial2 = model.SecondaryMember.MiddleInitial;
-                member.LastName2 = model.SecondaryMember.LastName;
-                member.BirthDate2 = model.SecondaryMember.DateOfBirth;
+                if (model.SecondaryMember != null)
+                {
+                    member.FirstName2 = model.SecondaryMember.FirstName;
+                    member.MiddleInitial2 = model.SecondaryMember.MiddleInitial;
+                    member.LastName2 = model.SecondaryMember.LastName;
+                    member.BirthDate2 = model.SecondaryMember.DateOfBirth;
+                    //member.email2 = model.SecondaryMember.Email;
+                }
 
-                //member.email2 = model.SecondaryMember.Email;
                 member.Family = model.FamilyMemberString;
                 member.IsActive = true;
-                member.HotelRewards = model.PackageInfo.Points.ToString();
 
                 #region Unmapped MemberModel fields
                 //member.MemberId = model. ;
@@ -659,9 +671,14 @@ namespace Legacy.Services
             }
         }
         [Queue("rsi_api")]
-        public void UpdateMemberInRSIDb(int jobId, int rsiId)
+        //public void UpdateMemberInRSIDb(int jobId, int rsiId)
+        public void UpdateMemberInRSIDb(MemberInfoViewModel model, int rsiId)
         {
-            var model = _hfService.GetModelForJobId<MemberInfoViewModel>(jobId).Result;
+            //var model = _hfService.GetModelForJobId<MemberInfoViewModel>(jobId).Result;
+
+            if (model.OrganizationInfo == null) model.OrganizationInfo = new OrganizationInfoViewModel();
+            if (model.PackageInfo == null) model.PackageInfo = new PackageInfoViewModel();
+            if (model.SecondaryMember == null) model.SecondaryMember = new PersonViewModel();
 
             #region MemberUpdateVIP
             var result = _rsiContext.LoadStoredProc("dbo.MemberUpdateVIP")
@@ -782,18 +799,25 @@ namespace Legacy.Services
             #endregion MemberUpdateCB
         }
         [Queue("rsi_api")]
-        public void UpdateFamilyInRSIDb(int jobId, int rsiId)
+        //public void UpdateFamilyInRSIDb(int jobId, int rsiId)
+        public void UpdateFamilyInRSIDb(MemberInfoViewModel updatedMemberInfo, int rsiId)
         {
-            var updatedMemberInfo = _hfService.GetModelForJobId<MemberInfoViewModel>(jobId).Result;
+            //var updatedMemberInfo = _hfService.GetModelForJobId<MemberInfoViewModel>(jobId).Result;
 
-            if (string.IsNullOrEmpty(updatedMemberInfo.SecondaryMember.FirstName))
-                DeactivateAuthorizedUser(updatedMemberInfo.SecondaryMember.RSIId);
-            else
-                AddUpdateCRMAuthorizedUsers(rsiId, updatedMemberInfo.SecondaryMember);
+            if (updatedMemberInfo.SecondaryMember != null && updatedMemberInfo.SecondaryMember.RSIId > 0)
+            {
+                if (string.IsNullOrEmpty(updatedMemberInfo.SecondaryMember.FirstName))
+                    DeactivateAuthorizedUser(updatedMemberInfo.SecondaryMember.RSIId);
+                else
+                    AddUpdateCRMAuthorizedUsers(rsiId, updatedMemberInfo.SecondaryMember);
+            }
 
-            var response = AddUpdateFamilyAsync(rsiId, updatedMemberInfo.FamilyMembers).Result;
-            if (!response.isSuccess)
-                throw new Exception($"UpdateFamilyInRSIDb Failed for RSIId: {rsiId}  Reason: {response.message} ");
+            if (updatedMemberInfo.FamilyMembers != null)
+            {
+                var response = AddUpdateFamilyAsync(rsiId, updatedMemberInfo.FamilyMembers).Result;
+                if (!response.isSuccess)
+                    throw new Exception($"UpdateFamilyInRSIDb Failed for RSIId: {rsiId}  Reason: {response.message} ");
+            }
         }
 
         public async Task<(bool isSuccess, string message, List<TravelDetailViewModel> travels)> GetTravelInfoAsync(int rsiId)
@@ -964,9 +988,10 @@ namespace Legacy.Services
                             }
                         }
 
-                        var jobData = await _hfService.GetJobDataByRSIId(rsiId);
-                        model.PackageInfo.UpgradingToPackgeId = (string.IsNullOrEmpty(jobData.info)) ? 
-                            model.PackageInfo.PackageId : Convert.ToInt32(jobData.info);
+                        model.PackageInfo.UpgradingToPackgeId = model.PackageInfo.PackageId;
+                        //var jobData = await _hfService.GetJobDataByRSIId(rsiId);
+                        //model.PackageInfo.UpgradingToPackgeId = (string.IsNullOrEmpty(jobData.info)) ? 
+                        //    model.PackageInfo.PackageId : Convert.ToInt32(jobData.info);
                     }
 
                     using (var conn = new SqlConnection(SqlHelper.GetConnectionString()))
