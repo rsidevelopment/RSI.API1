@@ -165,6 +165,8 @@ namespace Legacy.Services.Models._ViewModels.Member
         public string PackageName { get; set; }
         [JsonProperty(PropertyName = "benefits")]
         public BenefitsInfoViewModel Benefits { get; set; } = new BenefitsInfoViewModel();
+        [JsonProperty(PropertyName = "upgrading_to_package_id")]
+        public int UpgradingToPackgeId { get; set; }
     }
 
     public class BenefitsInfoViewModel

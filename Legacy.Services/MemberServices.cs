@@ -21,14 +21,14 @@ namespace Legacy.Services
     {
         private readonly RSIDbContext _rsiContext;
         private readonly LegacyDbContext _legacyContext;
-        private readonly HangFireDbContext _hfContext;
+        private readonly IHangFireService _hfService;
         private readonly IPackageService _packageService;
 
-        public MemberServices(RSIDbContext rsiContext, LegacyDbContext legacyContext, HangFireDbContext hfContext, IPackageService packageService)
+        public MemberServices(RSIDbContext rsiContext, LegacyDbContext legacyContext, IHangFireService hfContext, IPackageService packageService)
         {
             _rsiContext = rsiContext;
             _legacyContext = legacyContext;
-            _hfContext = hfContext;
+            _hfService = hfContext;
             _packageService = packageService;
         }
 
@@ -486,7 +486,7 @@ namespace Legacy.Services
         {
             try
             {
-                var jobData = _hfContext.NewRSIJobData(model);
+                var jobData = await _hfService.NewRSIJobData(model, rsiId, model.PackageInfo.PackageId.ToString());
 
                 //UpdateMemberInRSIDb(jobData.jobId, rsiId);
                 //UpdateFamilyInRSIDb(jobData.jobId, rsiId);
@@ -505,7 +505,7 @@ namespace Legacy.Services
         [Queue("rsi_api")]
         public void UpdateMemberInLegacyRSIDb(int jobId, int rsiId)
         {
-            var model = _hfContext.GetModelForJobId<MemberInfoViewModel>(jobId);
+            var model = _hfService.GetModelForJobId<MemberInfoViewModel>(jobId).Result;
             MemberModel member = _legacyContext.Users.FirstOrDefault(x => x.MemberId == rsiId);
 
             if (member != null && member.MemberId > 0)
@@ -661,7 +661,7 @@ namespace Legacy.Services
         [Queue("rsi_api")]
         public void UpdateMemberInRSIDb(int jobId, int rsiId)
         {
-            var model = _hfContext.GetModelForJobId<MemberInfoViewModel>(jobId);
+            var model = _hfService.GetModelForJobId<MemberInfoViewModel>(jobId).Result;
 
             #region MemberUpdateVIP
             var result = _rsiContext.LoadStoredProc("dbo.MemberUpdateVIP")
@@ -784,7 +784,7 @@ namespace Legacy.Services
         [Queue("rsi_api")]
         public void UpdateFamilyInRSIDb(int jobId, int rsiId)
         {
-            var updatedMemberInfo = _hfContext.GetModelForJobId<MemberInfoViewModel>(jobId);
+            var updatedMemberInfo = _hfService.GetModelForJobId<MemberInfoViewModel>(jobId).Result;
 
             if (string.IsNullOrEmpty(updatedMemberInfo.SecondaryMember.FirstName))
                 DeactivateAuthorizedUser(updatedMemberInfo.SecondaryMember.RSIId);
@@ -922,7 +922,7 @@ namespace Legacy.Services
 
                     PackageViewModel packages = await _packageService.GetPackageInfoByRSIIdAsync(rsiId);
 
-                    if(packages != null && packages.PackageId > 0)
+                    if (packages != null && packages.PackageId > 0)
                     {
                         model.PackageInfo = new PackageInfoViewModel()
                         {
@@ -930,7 +930,7 @@ namespace Legacy.Services
                             PackageName = packages.PackageName
                         };
 
-                        foreach(var row in packages.Benefits)
+                        foreach (var row in packages.Benefits)
                         {
                             switch (row.Category.ToUpper())
                             {
@@ -941,7 +941,7 @@ namespace Legacy.Services
                                     model.PackageInfo.Benefits.HasCondos = true;
                                     break;
                                 case "CRUISE":
-                                    
+
                                     break;
                                 case "HOTEL":
                                     model.PackageInfo.Benefits.HasHotels = true;
@@ -963,6 +963,10 @@ namespace Legacy.Services
                                     break;
                             }
                         }
+
+                        var jobData = await _hfService.GetJobDataByRSIId(rsiId);
+                        model.PackageInfo.UpgradingToPackgeId = (string.IsNullOrEmpty(jobData.info)) ? 
+                            model.PackageInfo.PackageId : Convert.ToInt32(jobData.info);
                     }
 
                     using (var conn = new SqlConnection(SqlHelper.GetConnectionString()))
