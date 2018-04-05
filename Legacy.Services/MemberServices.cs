@@ -178,7 +178,8 @@ namespace Legacy.Services
                         UpgradeAgentId = tmp.UpgradeAgentId,
                         UpgradeDate = tmp.UpgradeDate,
                         UpgradePrice = tmp.UpgradePrice,
-                        UpgradeProgram = tmp.UpgradeProgram
+                        UpgradeProgram = tmp.UpgradeProgram,
+                        IsUnlimitedPoints = tmp.IsUnlimitedPoints
                     };
                 }
 

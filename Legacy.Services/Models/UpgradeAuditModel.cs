@@ -43,5 +43,7 @@ namespace Legacy.Services.Models
         public decimal FinancedAmount { get; set; }
         [Required]
         public int FinanceTerm { get; set; }
+        [Required]
+        public bool IsUnlimitedPoints { get; set; } = false;
     }
 }

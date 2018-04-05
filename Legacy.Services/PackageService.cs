@@ -100,6 +100,9 @@ namespace Legacy.Services
                         if (!rdr.IsDBNull(18))
                             model.CondoWeeks = rdr.GetInt32(18);
 
+                        if (!rdr.IsDBNull(19))
+                            model.IsUnlimitedPoints = rdr.GetBoolean(19);
+
                     }
 
                 }

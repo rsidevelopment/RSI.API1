@@ -44,6 +44,8 @@ namespace Legacy.Services.Models._ViewModels.Package
         public int BelowRetailDiscount { get; set; } = 0;
         [JsonProperty(PropertyName = "condo_weeks")]
         public int CondoWeeks { get; set; } = 0;
+        [JsonProperty(PropertyName = "is_unlimited_points")]
+        public bool IsUnlimitedPoints { get; set; } = false;
         [JsonIgnore]
         public string SetBenefitsString
         {
