@@ -101,7 +101,7 @@ namespace Legacy.Services
                             model.CondoWeeks = rdr.GetInt32(18);
 
                         if (!rdr.IsDBNull(19))
-                            model.IsUnlimitedPoints = rdr.GetBoolean(19);
+                            model.IsUnlimitedPoints = Decimal.ToInt16(rdr.GetDecimal(19)) == 1 ? true : false;
 
                     }
 
@@ -187,7 +187,8 @@ namespace Legacy.Services
                                  Name = !rdr.IsDBNull(1) ? rdr.GetString(1) : "",
                                  CondoWeeks = !rdr.IsDBNull(2) ? rdr.GetInt32(2) : 0,
                                  RCIWeeks = !rdr.IsDBNull(3) ? rdr.GetInt32(3) : 0,
-                                 Points = !rdr.IsDBNull(4) ? int.Parse(rdr.GetString(4)) : 0
+                                 Points = !rdr.IsDBNull(4) ? int.Parse(rdr.GetString(4)) : 0,
+                                 IsUnlimitedPoints = !rdr.IsDBNull(5) ? Decimal.ToInt16(rdr.GetDecimal(5)) == 1 ? true : false : false
                             };
 
                             model.Rows.Add(tmp);

@@ -44,6 +44,6 @@ namespace Legacy.Services.Models
         [Required]
         public int FinanceTerm { get; set; }
         [Required]
-        public bool IsUnlimitedPoints { get; set; } = false;
+        public Int16 IsUnlimitedPoints { get; set; } = 0;
     }
 }

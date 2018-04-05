@@ -17,5 +17,7 @@ namespace Legacy.Services.Models._ViewModels.Package
         public int RCIWeeks { get; set; }
         [JsonProperty(PropertyName = "points")]
         public int Points { get; set; }
+        [JsonProperty(PropertyName = "is_unlimited_points")]
+        public bool IsUnlimitedPoints { get; set; }
     }
 }
