@@ -32,6 +32,8 @@ namespace Legacy.Services.Models._ViewModels.Member
         public int RCIWeeks { get; set; }
         [JsonProperty(PropertyName = "points"), Required]
         public float Points { get; set; }
+        [JsonProperty("is_unlimited_points")]
+        public bool IsUnlimitedPoints { get; set; }
         [JsonProperty(PropertyName = "upgrade_price"), Required]
         public decimal UpgradePrice { get; set; }
         [JsonProperty(PropertyName = "down_payment"), Required]
