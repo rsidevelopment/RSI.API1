@@ -414,42 +414,45 @@ namespace Legacy.Services
         }
         void AddUpdateCRMAuthorizedUsers(long rsiId, FamilyMemberViewModel familyMember)
         {
-            var result = _rsiContext.LoadStoredProc("dbo.AddUpdateCRMAuthorizedUsers")
-            .WithSqlParam("Id", familyMember.FamilyMemberId)
-            .WithSqlParam("RSIId", rsiId)
-            .WithSqlParam("FirstName", familyMember.FirstName)
-            .WithSqlParam("LastName", familyMember.LastName)
-            .WithSqlParam("BirthDate", familyMember.DateOfBirth)
-            .WithSqlParam("Relationship", familyMember.Relationship)
-            .WithSqlParam("Email", familyMember.Email)
-            .WithSqlParam("PrimaryPhone", familyMember.PrimaryPhone)
-            .WithSqlParam("SecondaryPhone", familyMember.AlternativePhone)
-            .WithSqlParam("Address", string.Empty)
-            .WithSqlParam("City", string.Empty)
-            .WithSqlParam("State", string.Empty)
-            .WithSqlParam("PostalCode", string.Empty)
-            .WithSqlParam("Country", string.Empty)
-            .ExecuteStoredProcAsync<IdResponse>().Result.FirstOrDefault();
+            if (familyMember.Relationship != "SPOUSE")
+            {
+                var result = _rsiContext.LoadStoredProc("dbo.AddUpdateCRMAuthorizedUsers")
+                .WithSqlParam("Id", familyMember.FamilyMemberId)
+                .WithSqlParam("RSIId", rsiId)
+                .WithSqlParam("FirstName", familyMember.FirstName)
+                .WithSqlParam("LastName", familyMember.LastName)
+                .WithSqlParam("BirthDate", familyMember.DateOfBirth)
+                .WithSqlParam("Relationship", familyMember.Relationship)
+                .WithSqlParam("Email", familyMember.Email)
+                .WithSqlParam("PrimaryPhone", familyMember.PrimaryPhone)
+                .WithSqlParam("SecondaryPhone", familyMember.AlternativePhone)
+                .WithSqlParam("Address", string.Empty)
+                .WithSqlParam("City", string.Empty)
+                .WithSqlParam("State", string.Empty)
+                .WithSqlParam("PostalCode", string.Empty)
+                .WithSqlParam("Country", string.Empty)
+                .ExecuteStoredProcAsync<IdResponse>().Result.FirstOrDefault();
 
-            if (result.Id == 0) throw new Exception($"AddUpdateCRMAuthorizedUsers failed for RSIId: {rsiId} Family Member Id: {familyMember.FamilyMemberId}");
+                if (result.Id == 0) throw new Exception($"AddUpdateCRMAuthorizedUsers failed for RSIId: {rsiId} Family Member Id: {familyMember.FamilyMemberId}");
+            }
         }
         void AddUpdateCRMAuthorizedUsers(long rsiId, PersonViewModel secondary)
         {
             var result = _rsiContext.LoadStoredProc("dbo.AddUpdateCRMAuthorizedUsers")
-            .WithSqlParam("Id", rsiId)
-            .WithSqlParam("RSIId", secondary.RSIId)
-            .WithSqlParam("FirstName", secondary.FirstName)
-            .WithSqlParam("LastName", secondary.LastName)
-            .WithSqlParam("BirthDate", secondary.DateOfBirth)
-            .WithSqlParam("Relationship", "SPOUSE")
-            .WithSqlParam("Email", secondary.Email)
-            .WithSqlParam("PrimaryPhone", secondary.HomePhone)
-            .WithSqlParam("SecondaryPhone", secondary.MobilePhone)
-            .WithSqlParam("Address", $"{secondary.Address1} {secondary.Address2}")
-            .WithSqlParam("City", secondary.City)
-            .WithSqlParam("State", secondary.State)
-            .WithSqlParam("PostalCode", secondary.PostalCode)
-            .WithSqlParam("Country", secondary.Country)
+            .WithSqlParam("@Id", secondary.RSIId)
+            .WithSqlParam("@RSIId", rsiId)
+            .WithSqlParam("@FirstName", secondary.FirstName)
+            .WithSqlParam("@LastName", secondary.LastName)
+            .WithSqlParam("@BirthDate", secondary.DateOfBirth)
+            .WithSqlParam("@Relationship", "SPOUSE")
+            .WithSqlParam("@Email", secondary.Email)
+            .WithSqlParam("@PrimaryPhone", secondary.HomePhone)
+            .WithSqlParam("@SecondaryPhone", secondary.MobilePhone)
+            .WithSqlParam("@Address", $"{secondary.Address1} {secondary.Address2}")
+            .WithSqlParam("@City", secondary.City)
+            .WithSqlParam("@State", secondary.State)
+            .WithSqlParam("@PostalCode", secondary.PostalCode)
+            .WithSqlParam("@Country", secondary.Country)
             .ExecuteStoredProcAsync<IdResponse>().Result.FirstOrDefault();
 
             if (result.Id == 0) throw new Exception($"AddUpdateCRMAuthorizedUsers failed for RSIId: {rsiId} Secondary Member Id: {secondary.RSIId}");
@@ -467,6 +470,7 @@ namespace Legacy.Services
                 var previousFamily = await GetFamilyAsync(rsiId, string.Empty);
                 foreach (var fm in previousFamily.family)
                 {
+                    //if(previousFamily.Rel != "SPOUSE" || pre)
                     if (!family.Any(f => { return f.FamilyMemberId == fm.FamilyMemberId; }))
                         DeactivateAuthorizedUser(fm.FamilyMemberId);
                 }
@@ -741,18 +745,18 @@ namespace Legacy.Services
             .WithSqlParam("FirstName", model.PrimaryMember.FirstName)
             .WithSqlParam("MiddleName", model.PrimaryMember.MiddleName)
             .WithSqlParam("LastName", model.PrimaryMember.LastName)
-            .WithSqlParam("FirstName2", model.SecondaryMember.FirstName)
-            .WithSqlParam("MiddleName2", model.SecondaryMember.MiddleName)
-            .WithSqlParam("LastName2", model.SecondaryMember.LastName)
-            .WithSqlParam("Family", model.FamilyMemberString)
+            .WithSqlParam("FirstName2", null)
+            .WithSqlParam("MiddleName2", null)
+            .WithSqlParam("LastName2", null)
+            .WithSqlParam("Family", null)
             .WithSqlParam("Address1", model.PrimaryMember.Address1)
-            .WithSqlParam("Address2", model.SecondaryMember.Address1)
+            .WithSqlParam("Address2", model.PrimaryMember.Address2)
             .WithSqlParam("City", model.PrimaryMember.City)
             .WithSqlParam("StateCode", model.PrimaryMember.State)
             .WithSqlParam("PostalCode", model.PrimaryMember.PostalCode)
             .WithSqlParam("CountryCode", model.PrimaryMember.Country)
             .WithSqlParam("Phone1", model.PrimaryMember.HomePhone)
-            .WithSqlParam("Phone2", model.SecondaryMember.HomePhone)
+            .WithSqlParam("Phone2", model.PrimaryMember.MobilePhone)
             .WithSqlParam("Email1", model.PrimaryMember.Email)
             .WithSqlParam("BlockedReason", null)
             .WithSqlParam("CondoRewards", 0)
@@ -813,12 +817,16 @@ namespace Legacy.Services
                 else
                     AddUpdateCRMAuthorizedUsers(rsiId, updatedMemberInfo.SecondaryMember);
             }
-
-            if (updatedMemberInfo.FamilyMembers != null)
+            else if (updatedMemberInfo.SecondaryMember != null && !String.IsNullOrEmpty(updatedMemberInfo.SecondaryMember.FirstName) && !String.IsNullOrEmpty(updatedMemberInfo.SecondaryMember.LastName))
+                AddUpdateCRMAuthorizedUsers(rsiId, updatedMemberInfo.SecondaryMember);
+            else
             {
-                var response = AddUpdateFamilyAsync(rsiId, updatedMemberInfo.FamilyMembers).Result;
-                if (!response.isSuccess)
-                    throw new Exception($"UpdateFamilyInRSIDb Failed for RSIId: {rsiId}  Reason: {response.message} ");
+                if (updatedMemberInfo.FamilyMembers != null)
+                {
+                    var response = AddUpdateFamilyAsync(rsiId, updatedMemberInfo.FamilyMembers).Result;
+                    if (!response.isSuccess)
+                        throw new Exception($"UpdateFamilyInRSIDb Failed for RSIId: {rsiId}  Reason: {response.message} ");
+                }
             }
         }
 
