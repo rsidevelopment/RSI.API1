@@ -417,20 +417,20 @@ namespace Legacy.Services
             if (familyMember.Relationship != "SPOUSE")
             {
                 var result = _rsiContext.LoadStoredProc("dbo.AddUpdateCRMAuthorizedUsers")
-                .WithSqlParam("Id", familyMember.FamilyMemberId)
-                .WithSqlParam("RSIId", rsiId)
-                .WithSqlParam("FirstName", familyMember.FirstName)
-                .WithSqlParam("LastName", familyMember.LastName)
-                .WithSqlParam("BirthDate", familyMember.DateOfBirth)
-                .WithSqlParam("Relationship", familyMember.Relationship)
-                .WithSqlParam("Email", familyMember.Email)
-                .WithSqlParam("PrimaryPhone", familyMember.PrimaryPhone)
-                .WithSqlParam("SecondaryPhone", familyMember.AlternativePhone)
-                .WithSqlParam("Address", string.Empty)
-                .WithSqlParam("City", string.Empty)
-                .WithSqlParam("State", string.Empty)
-                .WithSqlParam("PostalCode", string.Empty)
-                .WithSqlParam("Country", string.Empty)
+                .WithSqlParam("@Id", familyMember.FamilyMemberId)
+                .WithSqlParam("@RSIId", rsiId)
+                .WithSqlParam("@FirstName", familyMember.FirstName)
+                .WithSqlParam("@LastName", familyMember.LastName)
+                .WithSqlParam("@BirthDate", familyMember.DateOfBirth)
+                .WithSqlParam("@Relationship", familyMember.Relationship)
+                .WithSqlParam("@Email", familyMember.Email)
+                .WithSqlParam("@PrimaryPhone", familyMember.PrimaryPhone)
+                .WithSqlParam("@SecondaryPhone", familyMember.AlternativePhone)
+                .WithSqlParam("@Address", string.Empty)
+                .WithSqlParam("@City", string.Empty)
+                .WithSqlParam("@State", string.Empty)
+                .WithSqlParam("@PostalCode", string.Empty)
+                .WithSqlParam("@Country", string.Empty)
                 .ExecuteStoredProcAsync<IdResponse>().Result.FirstOrDefault();
 
                 if (result.Id == 0) throw new Exception($"AddUpdateCRMAuthorizedUsers failed for RSIId: {rsiId} Family Member Id: {familyMember.FamilyMemberId}");
@@ -470,14 +470,17 @@ namespace Legacy.Services
                 var previousFamily = await GetFamilyAsync(rsiId, string.Empty);
                 foreach (var fm in previousFamily.family)
                 {
-                    //if(previousFamily.Rel != "SPOUSE" || pre)
-                    if (!family.Any(f => { return f.FamilyMemberId == fm.FamilyMemberId; }))
-                        DeactivateAuthorizedUser(fm.FamilyMemberId);
+                    if (fm.Relationship != "SPOUSE" || fm.Relationship != "Significant_Other")
+                    {
+                        if (!family.Any(f => { return f.FamilyMemberId == fm.FamilyMemberId; }))
+                            DeactivateAuthorizedUser(fm.FamilyMemberId);
+                    }
                 }
 
                 foreach (var fm in family)
                 {
-                    AddUpdateCRMAuthorizedUsers(rsiId, fm);
+                    if (fm.Relationship != "SPOUSE" || fm.Relationship != "Significant_Other")
+                        AddUpdateCRMAuthorizedUsers(rsiId, fm);
                 }
             }
             catch (Exception ex)
@@ -819,7 +822,8 @@ namespace Legacy.Services
             }
             else if (updatedMemberInfo.SecondaryMember != null && !String.IsNullOrEmpty(updatedMemberInfo.SecondaryMember.FirstName) && !String.IsNullOrEmpty(updatedMemberInfo.SecondaryMember.LastName))
                 AddUpdateCRMAuthorizedUsers(rsiId, updatedMemberInfo.SecondaryMember);
-            else
+
+            if (updatedMemberInfo.FamilyMembers != null)
             {
                 if (updatedMemberInfo.FamilyMembers != null)
                 {
