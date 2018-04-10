@@ -179,7 +179,7 @@ namespace Legacy.Services
                         UpgradeDate = tmp.UpgradeDate,
                         UpgradePrice = tmp.UpgradePrice,
                         UpgradeProgram = tmp.UpgradeProgram,
-                        IsUnlimitedPoints = tmp.IsUnlimitedPoints == 1 ? true : false
+                        IsUnlimitedPoints = tmp.IsUnlimitedPoints
                     };
                 }
 
@@ -229,7 +229,7 @@ namespace Legacy.Services
                         m.UpgradeAgentId = model.UpgradeAgentId;
                         m.UpgradeDate = model.UpgradeDate;
                         m.UpgradePrice = model.UpgradePrice;
-                        m.IsUnlimitedPoints = model.IsUnlimitedPoints == true ? (Int16)1 : (Int16)0;
+                        m.IsUnlimitedPoints = model.IsUnlimitedPoints;
                         
                     }
                     else
