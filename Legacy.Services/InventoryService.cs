@@ -5,21 +5,31 @@ using Legacy.Services.Models._ViewModels;
 using Legacy.Services.Models._ViewModels.Inventory;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Data;
 using System.Linq;
+using System.ServiceModel;
 using System.Threading.Tasks;
-
+using Microsoft.Extensions.Configuration;
 
 namespace Legacy.Services
 {
     public class InventoryService : IInventoryService
     {
-        private readonly LegacyDbContext _context;
-        private readonly IUnitService _unitService;
+        private const string _userName = "Dennis";
+        private const string _password = "dll";
+        private const string _url = "https://accessrsi.com/rsiwebservices/xinventoryws.asmx";
 
-        public InventoryService(LegacyDbContext context, IUnitService unitService)
+        private readonly LegacyDbContext _legacyContext;
+        private readonly RSIDbContext _rsiContext;
+        private readonly IUnitService _unitService;
+        private readonly IConfiguration _configuration;
+
+        public InventoryService(LegacyDbContext legacyContext, RSIDbContext rsiContext, IUnitService unitService, IConfiguration configuration)
         {
-            _context = context;
+            _legacyContext = legacyContext;
+            _rsiContext = rsiContext;
             _unitService = unitService;
+            _configuration = configuration;
         }
 
         class apiInventorySearchResult
@@ -43,7 +53,7 @@ namespace Legacy.Services
 
             try
             {
-                var result = await _context.LoadStoredProc("dbo.apiInventorySearch")
+                var result = await _legacyContext.LoadStoredProc("dbo.apiInventorySearch")
                 .WithSqlParam("resortID", search.UnitId)
                 .WithSqlParam("startDate", search.CheckInStart)
                 .WithSqlParam("endDate", search.CheckInEnd)
@@ -90,13 +100,67 @@ namespace Legacy.Services
 
             try
             {
-                if (bookingRequestViewModel.InventoryId > 0)
+                var holdResponse = await HoldUnitAsync(bookingRequestViewModel.InventoryId);
+                if (!holdResponse.IsSuccess)
                 {
-                    var unit = await _unitService.GetUnitByInventoryId(bookingRequestViewModel.InventoryId);
-                    model.Message = unit.Message;
+                    model.Message = holdResponse.Message;
+                    return model;
                 }
-                else
-                    model.Message = "Error: Inventory not found";
+
+                var hldUpdate = _rsiContext.Holds.FirstOrDefault(x => x.keyid == holdResponse.HoldId);
+                if (hldUpdate != null)
+                {
+                    hldUpdate.isBooking = true;
+                    await _rsiContext.SaveChangesAsync();
+                }
+
+                string message = "";
+                bool? status = null;
+                var result = await _rsiContext.LoadStoredProc("dbo.vipConfirmAHold")
+                    .WithSqlParam("message", message, ParameterDirection.InputOutput)
+                    .WithSqlParam("status", status, ParameterDirection.InputOutput)
+                    .WithSqlParam("holdID", holdResponse.HoldId)
+                    .WithSqlParam("creatorID", holdResponse.HoldUser)
+                    .WithSqlParam("travelerFirstName", bookingRequestViewModel.FirstName)
+                    .WithSqlParam("travelerMiddleInitial", bookingRequestViewModel.MiddleName)
+                    .WithSqlParam("travelerLastName", bookingRequestViewModel.LastName)
+                    .WithSqlParam("travelerAddress", bookingRequestViewModel.Address)
+                    .WithSqlParam("travelerCity", bookingRequestViewModel.City)
+                    .WithSqlParam("travelerStateCode", bookingRequestViewModel.State)
+                    .WithSqlParam("travelerPostalCode", bookingRequestViewModel.Zip)
+                    .WithSqlParam("travelerCountryCode", bookingRequestViewModel.Country)
+                    .WithSqlParam("travelerPhone1", bookingRequestViewModel.Phone1)
+                    .WithSqlParam("travelerPhone2", bookingRequestViewModel.Phone2)
+                    .WithSqlParam("travelerEmail", bookingRequestViewModel.Email)
+                    .WithSqlParam("billingFirstName", bookingRequestViewModel.FirstName)
+                    .WithSqlParam("billingMiddleInitial", bookingRequestViewModel.MiddleName)
+                    .WithSqlParam("billingLastName", bookingRequestViewModel.LastName)
+                    .WithSqlParam("billingAddress", bookingRequestViewModel.Address)
+                    .WithSqlParam("billingCity", bookingRequestViewModel.City)
+                    .WithSqlParam("billingStateCode", bookingRequestViewModel.State)
+                    .WithSqlParam("billingPostalCode", bookingRequestViewModel.Zip)
+                    .WithSqlParam("billingCountryCode", bookingRequestViewModel.Country)
+                    .WithSqlParam("billingPhone1", bookingRequestViewModel.Phone1)
+                    .WithSqlParam("billingPhone2", bookingRequestViewModel.Phone2)
+                    .WithSqlParam("billingEmail", bookingRequestViewModel.Email)
+                    .WithSqlParam("creditCardNumber", string.Empty)
+                    .WithSqlParam("mM", string.Empty)
+                    .WithSqlParam("yYYY", string.Empty)
+                    .WithSqlParam("cVV", string.Empty)
+                    .WithSqlParam("return_value", 0, ParameterDirection.ReturnValue)
+                    .ExecuteStoredProcAsync<int>();
+
+                //these fields don't appear to be used in the old logic
+                //message = (string)result.DbParameters["message"].Value;
+                //status = (bool?)result.DbParameters["status"].Value;
+
+                if (holdResponse.OwnerId == 100)
+                {
+                    //TODO: RCI.HoldResponse hr = _rci.ConfirmHold(_userName, _password, hld.inventorytype, hld.refnum);
+                }
+
+                //TODO: ? reservationId = vipMoveHoldToResTableDoNotUpdatePoints(hld.keyid, authCode);
+                model.BookingId = holdResponse.HoldId;
             }
             catch (Exception ex)
             {
@@ -115,7 +179,7 @@ namespace Legacy.Services
 
             try
             {
-                model = await (from i in _context.Inventories
+                model = await (from i in _legacyContext.Inventories
                                where i.keyid == inventoryId
                                select new InventoryItemViewModel
                                {
@@ -156,7 +220,7 @@ namespace Legacy.Services
 
             try
             {
-                model = await (from i in _context.Inventories
+                model = await (from i in _legacyContext.Inventories
                               where i.inventoryid == inventoryId && i.ownerid == providerId
                               select new InventoryItemViewModel
                               {
@@ -186,6 +250,106 @@ namespace Legacy.Services
             {
                 if (model == null)
                     model = new InventoryItemViewModel();
+
+                model.Message = $"Error: {ex.Message}";
+            }
+
+            return model;
+        }
+
+        public async Task<(bool isSuccess, string message)> ResortSearch(string origionalResortId, DateTime startDate, DateTime endDate)
+        {
+            (bool isSuccess, string message) model = (false, "");
+
+            try
+            {
+                string startDateString = string.Format("{0:MM/dd/yyyy}", startDate);
+                string endDateString = string.Format("{0:MM/dd/yyyy}", endDate);
+
+                var soapClient = new RCI.XInventoryWSSoapClient(new RCI.XInventoryWSSoapClient.EndpointConfiguration(), "https://www.accessrsi.com/rsiwebservices/xinventoryws.asmx");
+
+                using (new OperationContextScope(soapClient.InnerChannel))
+                {
+                    RCI.ResortSearchResponse result = await soapClient.ResortSearchAsync(_userName, _password, origionalResortId, startDateString, endDateString);
+                    RCI.ResortResponse[] rows = result.Body.ResortSearchResult;
+                }
+            }
+            catch (Exception ex)
+            {
+                model = (false, ex.Message);
+            }
+
+            return model;
+        }
+
+        public async Task<HoldResponseViewModel> HoldUnitAsync(int inventoryId)
+        {
+            var model = new HoldResponseViewModel()
+            {
+                HoldUser = Convert.ToInt32(_configuration.GetSection("Booking")["HoldUser"])
+            };
+
+            try
+            {
+                var inventory = await (from i in _legacyContext.Inventories
+                                       where i.keyid == inventoryId
+                                       select i).FirstOrDefaultAsync();
+
+                if (inventory == null)
+                {
+                    model.Message = "Error: Inventory not found";
+                    return model;
+                }
+
+                model.OwnerId = inventory.ownerid;
+                if (inventory.quantity - inventory.hold <= 0 || inventory.finish > DateTime.Now)
+                {
+                    model.Message = "Error: Inventory not available";
+                    return model;
+                }
+
+                if (inventory.ownerid == 100)
+                {
+                    if (!Convert.ToBoolean(_configuration.GetSection("Booking")["AllowRCI"]))
+                    {
+                        model.Message = "Error: RCI inventory not supported";
+                        return model;
+                    }
+
+                    //TODO RCI Resort Search
+                }
+
+                decimal rsiCost = (string.IsNullOrEmpty(inventory.rsicost)) ? 0 : Decimal.Parse(inventory.rsicost);
+
+                var result = await _rsiContext.LoadStoredProc("dbo.vipHoldACondoWithRetail")
+                        .WithSqlParam("holdID", model.HoldId, ParameterDirection.InputOutput)
+                        .WithSqlParam("message", model.Message, ParameterDirection.InputOutput)
+                        .WithSqlParam("inventoryID", inventoryId)
+                        .WithSqlParam("creatorID", model.HoldUser)
+                        .WithSqlParam("customerPrice", rsiCost)
+                        .WithSqlParam("retail", 0)
+                        .WithSqlParam("overage", 0)
+                        .WithSqlParam("discount", 0)
+                        .WithSqlParam("reference", string.Empty)
+                        .WithSqlParam("sendXML", string.Empty)
+                        .WithSqlParam("receiveXML", string.Empty)
+                        .WithSqlParam("return_value", 0, ParameterDirection.ReturnValue)
+                        .ExecuteStoredProcAsync<int>();
+
+                model.HoldId = ((int?)result.DbParameters["holdID"].Value).GetValueOrDefault(0);
+                //model.Message = (string)result.DbParameters["message"].Value;
+
+                if (model.HoldId == 0)
+                {
+                    model.Message = "Error: Unit no longer available.";
+                    //TODO: ? ri.InternalMessage = "Unit successfully held with RCI, but error trying to write it to holds table.  User doesn't think it is held.";
+                    return model;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (model == null)
+                    model = new HoldResponseViewModel();
 
                 model.Message = $"Error: {ex.Message}";
             }

@@ -1,5 +1,6 @@
 ﻿using Legacy.Services.Models._ViewModels;
 using Legacy.Services.Models._ViewModels.Inventory;
+using System;
 using System.Threading.Tasks;
 
 namespace Legacy.Services.Interfaces
@@ -10,5 +11,7 @@ namespace Legacy.Services.Interfaces
         Task<BookingResponseViewModel> BookInventory(BookingRequestViewModel bookingRequestViewModel);
         Task<InventoryItemViewModel> GetInventoryById(int inventoryId);
         Task<InventoryItemViewModel> GetInventoryByProviderInventoryId(int providerId, string inventoryId);
+        Task<(bool isSuccess, string message)> ResortSearch(string origionalResortId, DateTime startDate, DateTime endDate);
+        Task<HoldResponseViewModel> HoldUnitAsync(int inventoryId);
     }
 }
