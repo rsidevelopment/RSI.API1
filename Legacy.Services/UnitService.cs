@@ -136,18 +136,19 @@ namespace Legacy.Services
         {
             public string urgentInfo { get; set; }
         }
-        async Task<UnitDetailsModel> GetUnitFromDB(int? unitId, int? inventoryId)
+        async Task<UnitDetailsModel> GetUnitFromDB(int? unitId, int? inventoryId, bool includeRCI = false)
         {
             var model = await
                    (from u in _context.Units
-                    join i in _context.Inventories on u.keyid equals i.unitkeyid
                     join c in _context.Translators on new { Reference = u.country, Type = "COUNTRY", Language = "EN" } equals new { c.Reference, c.Type, c.Language }
                     join s in _context.Translators on new { Reference = u.state, Type = "_S_" + u.country, Language = "EN" } equals new { s.Reference, s.Type, s.Language } into States
                     from St in States.DefaultIfEmpty()
                     join r in _context.Regions on u.regioncode equals r.regioncode into Regions
                     from Rg in Regions.DefaultIfEmpty()
+                    join i in _context.Inventories on u.keyid equals i.unitkeyid into Inventories
+                    from Ig in Inventories.DefaultIfEmpty()
                     where u.keyid == (unitId ?? u.keyid)
-                    && i.keyid == (inventoryId ?? i.keyid)
+                    && Ig.keyid == (inventoryId ?? Ig.keyid)
                     select new UnitDetailsModel()
                     {
                         Description = u.info,
