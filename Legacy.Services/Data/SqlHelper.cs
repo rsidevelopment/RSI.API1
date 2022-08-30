@@ -32,8 +32,6 @@ namespace LegacyData.Service.Data
             return _connectionString;
         }
 
-        
-
         public static int ExecuteNonQuery(SqlConnection conn, string cmdText, SqlParameter[] cmdParms)
         {
             SqlCommand cmd = conn.CreateCommand();

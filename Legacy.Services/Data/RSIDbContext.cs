@@ -11,6 +11,7 @@ namespace Legacy.Services.Data
 
         public DbSet<MemberModel> Users { get; set; }
         public DbSet<HoldModel> Holds { get; set; }
+        
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

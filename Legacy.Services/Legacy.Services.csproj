@@ -1,18 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="HangFire" Version="1.6.17" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.0.2" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
-    <PackageReference Include="System.Linq.Dynamic.Core" Version="1.0.8.2" />
-    <PackageReference Include="System.ServiceModel.Duplex" Version="4.4.0" />
-    <PackageReference Include="System.ServiceModel.Http" Version="4.4.0" />
-    <PackageReference Include="System.ServiceModel.NetTcp" Version="4.4.0" />
-    <PackageReference Include="System.ServiceModel.Security" Version="4.4.0" />
+    <PackageReference Include="HangFire" Version="1.6.20" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.4" />
+    
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="System.Linq.Dynamic.Core" Version="1.0.8.18" />
+    <PackageReference Include="System.ServiceModel.Duplex" Version="4.5.3" />
+    <PackageReference Include="System.ServiceModel.Http" Version="4.5.3" />
+    <PackageReference Include="System.ServiceModel.NetTcp" Version="4.5.3" />
+    <PackageReference Include="System.ServiceModel.Security" Version="4.5.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +28,12 @@
   <ItemGroup>
     <Folder Include="Models\_ViewModels\Organization\" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AccessDevelopment.Services\AccessDevelopment.Services.csproj" />
+  </ItemGroup>
+
+  
 
   <ItemGroup>
     <WCFMetadata Include="Connected Services" />

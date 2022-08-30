@@ -1,4 +1,6 @@
-﻿using Hangfire;
+﻿using AccessDevelopment.Services;
+using AccessDevelopment.Services.Interfaces;
+using Hangfire;
 using Legacy.Services;
 using Legacy.Services.Data;
 using Legacy.Services.Interfaces;
@@ -41,6 +43,7 @@ namespace RSI.API
             services.AddTransient<IInventoryService, InventoryService>();
             services.AddTransient<IHangFireService, HangFireService>();
             services.AddTransient<IRCIService, RCIService>();
+            services.AddTransient<IAccessDevelopmentService, AccessDevelopmentService>();
 
             services.AddMvcCore()
                 .AddAuthorization()
@@ -55,8 +58,6 @@ namespace RSI.API
                     //options.Authority = "http://localhost:60195";
                     options.RequireHttpsMetadata = false;
                     options.ApiName = "api1";
-
-
                 });
 
             services.AddSwaggerGen(c =>

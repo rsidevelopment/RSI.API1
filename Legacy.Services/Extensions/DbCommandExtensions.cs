@@ -6,6 +6,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Data.SqlClient;
 
 namespace Legacy.Services.Data
 {
@@ -13,6 +14,7 @@ namespace Legacy.Services.Data
     {
         public static DbCommand LoadStoredProc(this DbContext context, string storedProcName)
         {
+            //SqlConnection conn = 
             var cmd = context.Database.GetDbConnection().CreateCommand();
             cmd.CommandText = storedProcName;
             cmd.CommandType = System.Data.CommandType.StoredProcedure;

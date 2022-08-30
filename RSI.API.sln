@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RSI.API", "RSI.API\RSI.API.csproj", "{EED37136-1718-4711-9AB4-EF37522CE092}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RSI.API", "RSI.API\RSI.API.csproj", "{EED37136-1718-4711-9AB4-EF37522CE092}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legacy.Services", "Legacy.Services\Legacy.Services.csproj", "{65E7D62B-E810-4ABE-9D31-B79A760856C2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Legacy.Services", "Legacy.Services\Legacy.Services.csproj", "{65E7D62B-E810-4ABE-9D31-B79A760856C2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccessDevelopment.Services", "AccessDevelopment.Services\AccessDevelopment.Services.csproj", "{0F06FE7B-373E-42AC-B617-C11031D68BE5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{65E7D62B-E810-4ABE-9D31-B79A760856C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{65E7D62B-E810-4ABE-9D31-B79A760856C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{65E7D62B-E810-4ABE-9D31-B79A760856C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F06FE7B-373E-42AC-B617-C11031D68BE5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F06FE7B-373E-42AC-B617-C11031D68BE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F06FE7B-373E-42AC-B617-C11031D68BE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F06FE7B-373E-42AC-B617-C11031D68BE5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
