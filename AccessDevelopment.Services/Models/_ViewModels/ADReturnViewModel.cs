@@ -7,6 +7,8 @@ namespace AccessDevelopment.Services.Models._ViewModels
 {
     public class ADListReturnViewModel
     {
+        //[JsonProperty(PropertyName = "info", NullValueHandling = NullValueHandling.Ignore)]
+        //public ADInfo Info { get; set; } = null;
         [JsonProperty(PropertyName = "data")]
         public List<ADReturnViewModel> Items { get; set; } = new List<ADReturnViewModel>();
         [JsonProperty(PropertyName = "message")]
@@ -19,19 +21,20 @@ namespace AccessDevelopment.Services.Models._ViewModels
     {
         [JsonProperty(PropertyName = "id")]
         public int Id { get; set; } = 0;
-        [JsonProperty(PropertyName = "created_at")]
-        public DateTime CreationDate { get; set; } = DateTime.Now;
+        [JsonProperty(PropertyName = "created_at", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTime? CreationDate { get; set; } = DateTime.Now;
         [JsonProperty(PropertyName = "status")]
         public string Status { get; set; } = "NA";
         [JsonProperty(PropertyName = "valid_members_count")]
         public int ValidMemberCount { get; set; } = 0;
         [JsonProperty(PropertyName = "invalid_members_count")]
         public int InvalidMemberCount { get; set; } = 0;
-        [JsonProperty(PropertyName = "imported_at")]
-        public DateTime ImportedDate { get; set; } = DateTime.Now;
+        [JsonProperty(PropertyName = "imported_at", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTime? ImportedDate { get; set; } = DateTime.Now;
         [JsonProperty(PropertyName = "links")]
         public ADLinks Links { get; set; } = new ADLinks();
-
+        [JsonProperty(PropertyName = "submitted_by", NullValueHandling = NullValueHandling.Ignore)]
+        public string SubmittedBy { get; set; } = null;
     }
 
     public class ADLinks
@@ -42,5 +45,17 @@ namespace AccessDevelopment.Services.Models._ViewModels
         public string ValidMembersCSVLink { get; set; } = "";
         [JsonProperty(PropertyName = "invalid_members_csv", NullValueHandling = NullValueHandling.Ignore)]
         public string InvalidMembersCSVLink { get; set; } = null;
+    }
+
+    public class ADInfo
+    {
+        [JsonProperty(PropertyName = "total_results")]
+        public int TotalResults { get; set; }
+        [JsonProperty(PropertyName = "current_page")]
+        public int CurrentPage { get; set; }
+        [JsonProperty(PropertyName = "total_pages")]
+        public int TotalPages { get; set; }
+        [JsonProperty(PropertyName = "results_per_page")]
+        public int ResultsPerPage { get; set; }
     }
 }
